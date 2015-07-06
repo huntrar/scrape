@@ -30,10 +30,10 @@ def get_html(url):
 
         
 def parse_html(html, kws):
-    text = html.xpath('//text()')
+    text = html.xpath('//*[not(self::script)]/text()')
     for i, t in enumerate(text):
         for k in kws:
-            if k in t and ' = ' not in t:
+            if k in t:
                 yield filter(lambda x: x in string.printable, t.strip().encode('utf-8')) + '\n'
                 break
 
