@@ -36,6 +36,7 @@ def get_parser():
                         action='store_true')
     return parser
 
+
 def crawl(args, url):
     try:
         links = set(get_html(url).xpath('//a/@href'))
@@ -56,6 +57,7 @@ def crawl(args, url):
     filtered_links.insert(0, url)
     filtered_links = filter(validate_url, filtered_links)
     return filtered_links
+
 
 def write_pages(args, links, filename):
     if args['text']: 
@@ -90,6 +92,7 @@ def write_pages(args, links, filename):
             sys.stderr.write('Failed to convert to pdf.\n')
             sys.stderr.write(str(e) + '\n')
 
+
 def scrape(args):
     url = clean_url(args['url'])
 
@@ -117,6 +120,7 @@ def scrape(args):
         limit = len(links)
     write_pages(args, links[:limit], filename)
 
+
 def command_line_runner():
     parser = get_parser()
     args = vars(parser.parse_args()) 
@@ -129,6 +133,8 @@ def command_line_runner():
         parser.print_help()
     else:
         scrape(args)
+
+
 
 if __name__ == '__main__':
     command_line_runner()
