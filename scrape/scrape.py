@@ -19,12 +19,12 @@ import pdfkit as pk
 
 def get_parser():
     parser = argparse.ArgumentParser(description='a web scraping tool')
-    parser.add_argument('url', type=str, nargs='*',
-                        help='url to scrape')
-    parser.add_argument('-k', '--keywords', type=str, nargs='*', 
+    parser.add_argument('urls', type=str, nargs='*',
+                        help='urls to scrape')
+    parser.add_argument('-f', '--filter', type=str, nargs='*', 
                         help='filter lines by keywords, text only')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
-                        help='crawl links based on these keywords')
+                        help='enter keywords to crawl links')
     parser.add_argument('-ca', '--crawl-all', help='crawl all links',
                         action='store_true')
     parser.add_argument('-l', '--limit', type=int, help='crawl page limit')
@@ -70,7 +70,7 @@ def write_pages(args, links, filename):
             html = get_html(link)
 
             if html is not None:
-                text = get_text(html, args['keywords'])
+                text = get_text(html, args['filter'])
                 if text:
                     with open(filename, 'a') as f:
                         # Print page number if number of pages exceeds 1
@@ -98,7 +98,7 @@ def write_pages(args, links, filename):
 
 def scrape(args):
     url = ''
-    for u in args['url']:
+    for u in args['urls']:
         url = clean_url(u)
 
         base_url = '{url.netloc}'.format(url=urlparse(url))
@@ -134,7 +134,7 @@ def command_line_runner():
         print(__version__)
         return
 
-    if not args['url']:
+    if not args['urls']:
         parser.print_help()
     else:
         scrape(args)
