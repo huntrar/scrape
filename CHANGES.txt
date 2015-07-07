@@ -1,0 +1,9 @@
+0.0.3
+------
+
+ - Moved utils.py to scrape/
+
+0.0.2
+------
+
+ - First entry
