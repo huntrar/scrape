@@ -30,6 +30,8 @@ def get_parser():
     parser.add_argument('-l', '--limit', type=int, help='crawl page limit')
     parser.add_argument('-t', '--text', help='write to text instead of pdf',
                         action='store_true')
+    parser.add_argument('-vb', '--verbose', help='show pdfkit errors',
+                        action='store_true')
     parser.add_argument('-v', '--version', help='display current version',
                         action='store_true')
     return parser
@@ -78,18 +80,31 @@ def write_pages(args, links, filename):
     else:
         filename = filename + '.pdf'
         print('Writing {} page(s) to {}'.format(len(links), filename))
-        pk.from_url(links, filename)
+        
+        options = {}
+        if not args['verbose']:
+            options['quiet'] = None
+        try:
+            pk.from_url(links, filename, options=options)
+        except Exception as e:
+            sys.stderr.write('Failed to convert to pdf.\n')
+            sys.stderr.write(str(e) + '\n')
 
 def scrape(args):
     url = clean_url(args['url'])
+
     base_url = '{url.netloc}'.format(url=urlparse(url))
-    
+    base_name = ''
     for b in base_url.split('.'):
         if len(b) > 3:
-            base_url = b
+            base_name = b
             break
 
-    filename = base_url + '-' + url.strip('/').split('/')[-1]
+    tail_name = url.strip('/').split('/')[-1]
+    if '.' in tail_name:
+        filename = base_name
+    else:
+        filename = base_name + '-' + tail_name
 
     if args['crawl'] or args['crawl_all']:
         links = crawl(args, url)
