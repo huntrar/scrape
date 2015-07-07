@@ -1,3 +1,10 @@
+0.0.6
+------
+
+ - use --keywords flag for filtering text
+ - can pass multiple links now
+ - will not write empty files anymore
+
 0.0.5
 ------
 

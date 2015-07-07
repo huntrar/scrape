@@ -1,7 +1,7 @@
 
 #############################################################
 #                                                           #
-# scrape - a webpage scraping tool                          #
+# scrape - a web scraping tool                              #
 # written by Hunter Hammond (huntrar@gmail.com)             #
 #                                                           #
 #############################################################
@@ -18,11 +18,11 @@ import pdfkit as pk
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='a webpage scraping tool')
-    parser.add_argument('url', type=str, nargs='?',
+    parser = argparse.ArgumentParser(description='a web scraping tool')
+    parser.add_argument('url', type=str, nargs='*',
                         help='url to scrape')
-    parser.add_argument('keywords', type=str, nargs='*', 
-                        help='keywords to search')
+    parser.add_argument('-k', '--keywords', type=str, nargs='*', 
+                        help='filter lines by keywords, text only')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
                         help='crawl links based on these keywords')
     parser.add_argument('-ca', '--crawl-all', help='crawl all links',
@@ -62,7 +62,7 @@ def crawl(args, url):
 def write_pages(args, links, filename):
     if args['text']: 
         filename = filename + '.txt'
-        print('Writing {} page(s) to {}'.format(len(links), filename))
+        print('Attempting to write {} page(s) to {}'.format(len(links), filename))
 
         print_pg_num = len(links) > 1
 
@@ -71,17 +71,20 @@ def write_pages(args, links, filename):
 
             if html is not None:
                 text = get_text(html, args['keywords'])
-                with open(filename, 'a') as f:
-                    if print_pg_num:
-                        f.write('\n\n')
-                        f.write('~~~ Page {} ~~~\n'.format(str(i+1)))
-                    for line in text:
-                        f.write(line)
+                if text:
+                    with open(filename, 'a') as f:
+                        # Print page number if number of pages exceeds 1
+                        if print_pg_num:
+                            f.write('\n\n')
+                            f.write('~~~ Page {} ~~~\n'.format(str(i+1)))
+
+                        for line in text:
+                            f.write(line)
             else:
                 sys.stderr.write('Failed to parse {}.\n'.format(link))
     else:
         filename = filename + '.pdf'
-        print('Writing {} page(s) to {}'.format(len(links), filename))
+        print('Attempting to write {} page(s) to {}'.format(len(links), filename))
         
         options = {}
         if not args['verbose']:
@@ -94,31 +97,33 @@ def write_pages(args, links, filename):
 
 
 def scrape(args):
-    url = clean_url(args['url'])
+    url = ''
+    for u in args['url']:
+        url = clean_url(u)
 
-    base_url = '{url.netloc}'.format(url=urlparse(url))
-    base_name = ''
-    for b in base_url.split('.'):
-        if len(b) > 3:
-            base_name = b
-            break
+        base_url = '{url.netloc}'.format(url=urlparse(url))
+        base_name = ''
+        for b in base_url.split('.'):
+            if len(b) > 3:
+                base_name = b
+                break
 
-    tail_name = url.strip('/').split('/')[-1]
-    if '.' in tail_name:
-        filename = base_name
-    else:
-        filename = base_name + '-' + tail_name
+        tail_name = url.strip('/').split('/')[-1]
+        if '.' in tail_name:
+            filename = base_name
+        else:
+            filename = base_name + '-' + tail_name
 
-    if args['crawl'] or args['crawl_all']:
-        links = crawl(args, url)
-    else:
-        links = [url]
-    
-    if args['limit']:
-        limit = args['limit']
-    else:
-        limit = len(links)
-    write_pages(args, links[:limit], filename)
+        if args['crawl'] or args['crawl_all']:
+            links = crawl(args, url)
+        else:
+            links = [url]
+        
+        if args['limit']:
+            limit = args['limit']
+        else:
+            limit = len(links)
+        write_pages(args, links[:limit], filename)
 
 
 def command_line_runner():

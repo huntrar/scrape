@@ -27,17 +27,19 @@ def get_html(url):
 
 def get_text(html, kws):
     text = html.xpath('//*[not(self::script)]/text()')
+    new_text = []
     for line in text:
         if kws:
             for kw in kws:
                 if kw.strip() in line:
                     if line.strip():
-                        yield filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n'
+                        new_text.append(filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n')
                     break
         else:
             if line.strip():
-                yield filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n'
-            
+                new_text.append(filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n')
+    return new_text 
+
 
 def clean_url(url):
     if 'http://' not in url and 'https://' not in url:

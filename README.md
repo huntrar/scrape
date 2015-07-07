@@ -1,7 +1,7 @@
 # scrape
 
 ## 
-a webpage scraping tool
+a web scraping tool
 
 ## Installation
 * `pip install scrape`
@@ -10,27 +10,34 @@ a webpage scraping tool
 usage: scrape.py [-h] [-c [CRAWL [CRAWL ...]]] [-ca] [-l LIMIT] [-t]
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;url [keywords [keywords ...]]
 
-a webpage scraping tool
+a web scraping tool
 
 &nbsp;&nbsp;positional arguments:
 
 &nbsp;&nbsp;&nbsp;&nbsp;url&nbsp;&nbsp;&nbsp;url to scrape
-
-&nbsp;&nbsp;&nbsp;&nbsp;keywords&nbsp;&nbsp;&nbsp;keywords to search
 
 
 &nbsp;&nbsp;optional arguments:
 
 &nbsp;&nbsp;&nbsp;&nbsp;-h, --help&nbsp;&nbsp;show this help message and exit
 
+&nbsp;&nbsp;&nbsp;&nbsp;-k [KEYWORDS [KEYWORDS ...]], --keywords [KEYWORDS [KEYWORDS ...]]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;filter lines by keywords, text only
+
+
 &nbsp;&nbsp;&nbsp;&nbsp;-c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;crawl links based on these keywords
 
 &nbsp;&nbsp;&nbsp;&nbsp;-ca, --crawl-all&nbsp;&nbsp;crawl all links
 
-&nbsp;&nbsp;-l LIMIT, --limit LIMIT&nbsp;&nbsp;&nbsp;&nbsp;crawl page limit
+&nbsp;&nbsp;&nbsp;&nbsp;-l LIMIT, --limit LIMIT&nbsp;&nbsp;crawl page limit
 
-&nbsp;&nbsp;-t, --text&nbsp;&nbsp;&nbsp;&nbsp;write to text instead of pdf
+&nbsp;&nbsp;&nbsp;&nbsp;-t, --text&nbsp;&nbsp;write to text instead of pdf
+
+&nbsp;&nbsp;&nbsp;&nbsp;-vb, --verbose&nbsp;&nbsp;show pdfkit errors
+
+&nbsp;&nbsp;&nbsp;&nbsp;-v, --version&nbsp;&nbsp;display current version
+
 
 
 ## Author
