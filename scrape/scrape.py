@@ -6,7 +6,6 @@
 #                                                           #
 #############################################################
 
-
 import argparse
 import sys
 from urlparse import urlparse
@@ -20,7 +19,8 @@ import pdfkit as pk
 
 def get_parser():
     parser = argparse.ArgumentParser(description='a webpage scraping tool')
-    parser.add_argument('url', type=str, help='url to scrape')
+    parser.add_argument('url', type=str, nargs='?',
+                        help='url to scrape')
     parser.add_argument('keywords', type=str, nargs='*', 
                         help='keywords to search')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
