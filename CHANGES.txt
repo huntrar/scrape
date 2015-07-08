@@ -1,3 +1,9 @@
+0.0.8
+------
+
+ - better implementation of crawler, can now scrape entire websites
+ - added OrderedSet class to utils.py
+
 0.0.7
 ------
 

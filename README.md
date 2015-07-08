@@ -37,7 +37,7 @@ a web scraping tool
 
 * The --filter flag may be used in conjunction with --text to only save lines matching one or more keywords provided
 
-* Subsequent links may be followed by entering --crawl-all or --crawl. --crawl accepts a list of substrings to control which URL's to crawl.
+* Subsequent links may be followed by entering --crawl-all or --crawl. --crawl accepts a list of substrings to control which URL's to crawl, while --crawl-all will attempt to follow links indefinitely.
 
-* There is no limit to the number of pages to be crawled unless one is set using the --limit flag.
+* There is no limit to the number of pages to be crawled unless one is set using the --limit flag, thus to cancel crawling and begin processing simply press Ctrl-C.
 

@@ -37,39 +37,50 @@ def get_parser():
     return parser
 
 
-def crawl(args, url):
+def crawl(args, url, limit):
+    # These are keywords to filter links by
+    filter_words = args['crawl']
+
+    uncrawled_links = OrderedSet()
+    crawled_links = OrderedSet()
+
+    crawl_ct = 0
+
+    links_to_crawl = get_html(url).xpath('//a/@href')
+    crawled_links.add(url)
+    crawl_ct += 1
+    uncrawled_links.update(links_to_crawl)
+    
     try:
-        links = set(get_html(url).xpath('//a/@href'))
-    except TypeError:
-        return None
+        while uncrawled_links and (len(crawled_links) < limit or limit is None):
+            url = uncrawled_links.pop(last=False)
 
-    search_words = args['crawl']
-    if search_words:
-        filtered_links = []
-        for link in links:
-            for word in search_words:
-                if word in link:
-                    filtered_links.append(link)
-                    break
+            if url not in crawled_links and validate_url(url):
+                links_to_crawl = get_html(url).xpath('//a/@href')
+                crawled_links.add(url)
+                crawl_ct += 1
+                print('Crawled {} ({}).'.format(url, crawl_ct))
+                uncrawled_links.update(links_to_crawl)
+    except KeyboardInterrupt:
+        pass
+
+    if filter_words:
+        return filter(lambda x: x in filter_words, crawled_links)
     else:
-        filtered_links = list(links)
-
-    filtered_links.insert(0, url)
-    filtered_links = filter(validate_url, filtered_links)
-    return filtered_links
+        return list(crawled_links)
 
 
 def write_pages(args, links, filename):
     if args['text']: 
         filename = filename + '.txt'
-        print('Attempting to write {} page(s) to {}'.format(len(links), filename))
+        print('Attempting to write {} page(s) to {}.'.format(len(links), filename))
 
         print_pg_num = len(links) > 1
 
         for i, link in enumerate(links):
             html = get_html(link)
 
-            if html is not None:
+            if len(html) > 0:
                 text = get_text(html, args['filter'])
                 if text:
                     with open(filename, 'a') as f:
@@ -84,7 +95,7 @@ def write_pages(args, links, filename):
                 sys.stderr.write('Failed to parse {}.\n'.format(link))
     else:
         filename = filename + '.pdf'
-        print('Attempting to write {} page(s) to {}'.format(len(links), filename))
+        print('Attempting to write {} page(s) to {}.'.format(len(links), filename))
         
         options = {}
         if not args['verbose']:
@@ -114,16 +125,16 @@ def scrape(args):
         else:
             filename = base_name + '-' + tail_name
 
-        if args['crawl'] or args['crawl_all']:
-            links = crawl(args, url)
-        else:
-            links = [url]
-        
         if args['limit']:
             limit = args['limit']
         else:
-            limit = len(links)
-        write_pages(args, links[:limit], filename)
+            limit = None
+
+        if args['crawl'] or args['crawl_all']:
+            links = crawl(args, url, limit)
+        else:
+            links = [url]
+        write_pages(args, links, filename)
 
 
 def command_line_runner():
