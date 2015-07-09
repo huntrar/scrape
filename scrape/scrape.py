@@ -30,7 +30,7 @@ def get_parser():
     parser.add_argument('-l', '--limit', type=int, help='crawl page limit')
     parser.add_argument('-t', '--text', help='write to text instead of pdf',
                         action='store_true')
-    parser.add_argument('-vb', '--verbose', help='show pdfkit errors',
+    parser.add_argument('-vb', '--verbose', help='show pdfkit messages',
                         action='store_true')
     parser.add_argument('-v', '--version', help='display current version',
                         action='store_true')
@@ -97,7 +97,7 @@ def write_pages(args, links, filename):
         filename = filename + '.pdf'
         print('Attempting to write {} page(s) to {}.'.format(len(links), filename))
         
-        options = {}
+        options = {'ignore-load-errors': None}
         if not args['verbose']:
             options['quiet'] = None
         try:

@@ -1,3 +1,8 @@
+0.0.9
+------
+
+ - pdfkit now ignores load errors and writes as many pages as possible
+
 0.0.8
 ------
 

@@ -26,7 +26,7 @@ a web scraping tool
       -l LIMIT, --limit LIMIT
                             crawl page limit
       -t, --text            write to text instead of pdf
-      -vb, --verbose        show pdfkit errors
+      -vb, --verbose        show pdfkit messages
       -v, --version         display current version
 
 ## Author
