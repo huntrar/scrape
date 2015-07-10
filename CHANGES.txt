@@ -1,3 +1,9 @@
+0.0.11
+------
+
+ - fixed missing comma in install_requires in setup.py
+ - also labeled now as beta as there are still some kinks with crawling
+
 0.0.10
 ------
 

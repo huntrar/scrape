@@ -33,7 +33,7 @@ setup(
     description='a webpage scraping tool',
     long_description=long_description,
     classifiers=[
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Environment :: Web Environment",
         "Intended Audience :: End Users/Desktop",
@@ -57,7 +57,7 @@ setup(
         ]
     },
     install_requires=[
-        'lxml'
+        'lxml',
         'pdfkit'
     ]
 )
