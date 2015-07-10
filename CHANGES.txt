@@ -1,3 +1,8 @@
+0.0.10
+------
+
+ - now ignoring pdfkit load errors only if more than one link to try to prevent an empty pdf being created in case of error
+
 0.0.9
 ------
 

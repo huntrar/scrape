@@ -97,7 +97,15 @@ def write_pages(args, links, filename):
         filename = filename + '.pdf'
         print('Attempting to write {} page(s) to {}.'.format(len(links), filename))
         
-        options = {'ignore-load-errors': None}
+        options = {}
+        
+        ''' Only ignore errors if there is more than one link
+            This is to prevent an empty pdf being written
+            But if links > 1 we don't want one failure to prevent writing all
+        '''
+        if len(links) > 1:
+            options['ignore-load-errors'] = None
+
         if not args['verbose']:
             options['quiet'] = None
         try:
