@@ -5,6 +5,7 @@ scrape is a command-line tool for extracting webpages as text or pdf files. The 
 
 ## Installation
 * `pip install scrape`
+* [Installing wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF)
 
 ## Usage
     usage: scrape.py [-h] [-c [CRAWL [CRAWL ...]]] [-ca]
