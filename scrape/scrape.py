@@ -50,7 +50,6 @@ def crawl(args, url):
     # Domain of the seed url
     domain = args['domain']
 
-    # OrderedSet class defined in utils.py
     uncrawled_links = utils.OrderedSet()
     crawled_links = utils.OrderedSet()
 
@@ -60,10 +59,11 @@ def crawl(args, url):
     else:
         raw_links = []
 
+    ''' Clean the links, filter by domain if necessary, and update sets
+        set_domain inserts the domain from the seed url if none is found
+        clean_url removes www. and sets the scheme to http://
+    '''
     if raw_links:
-        ''' set_domain inserts the domain from the seed url if none is found
-            clean_url removes www. and sets the scheme to http://
-        '''
         links = [utils.clean_url(utils.set_domain(u, domain)) for u in raw_links]
 
         if restrict:
@@ -85,10 +85,11 @@ def crawl(args, url):
                 else:
                     raw_links = []
 
+                ''' Clean the links, filter by domain if necessary, and update sets
+                    set_domain inserts the domain from the seed url if none is found
+                    clean_url removes www. and sets the scheme to http://
+                '''
                 if raw_links:
-                    ''' set_domain inserts the domain from the seed url if none is found
-                        clean_url removes www. and sets the scheme to http://
-                    '''
                     links = [utils.clean_url(utils.set_domain(u, domain)) for u in raw_links]
 
                     if restrict:
@@ -151,8 +152,6 @@ def write_pages(args, links, file_name):
 
 
 def scrape(args):
-    url = ''
-
     for u in args['urls']:
         url = utils.resolve_url(u)
 
@@ -165,10 +164,10 @@ def scrape(args):
         base_url = domain.split('.')[-2]
         tail_url = url.strip('/').split('/')[-1]
 
-        if domain in tail_url:
-            out_file = domain
+        if base_url in tail_url:
+            out_file = base_url
         else:
-            out_file = domain + '-' + tail_url
+            out_file = base_url + '-' + tail_url
 
         if args['crawl'] or args['crawl_all']:
             links = crawl(args, url)

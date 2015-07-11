@@ -144,17 +144,17 @@ def resolve_url(url):
     return url
 
 
+def validate_url(url):
+    if url and ('http://' in url or 'https://' in url):
+        return True
+    return False
+
+
 def set_domain(url, domain):
     if not '{url.netloc}'.format(url=urlparse(url)) and '/' in url:
         return domain + url
     else:
         return url
-
-
-def validate_url(url):
-    if url and ('http://' in url or 'https://' in url):
-        return True
-    return False
 
 
 def validate_domain(url, domain):
@@ -176,3 +176,5 @@ def write_file(text, file_name):
             if line.strip():
                 f.write(line)
         f.write('\n')
+
+

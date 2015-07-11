@@ -1,3 +1,9 @@
+0.1.4
+------
+
+ - fixed output file generation, was using domain instead of base_url
+ - minor code cleanup
+
 0.1.3
 ------
 
