@@ -1,3 +1,8 @@
+0.1.2
+------
+
+ - added shebang
+
 0.1.1
 ------
  - uncommented import __version__
