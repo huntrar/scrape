@@ -152,15 +152,9 @@ def validate_url(url):
 
 def set_base(url, base_url):
     if not '{url.netloc}'.format(url=urlparse(url)):
-        return base_url + '/' + url.lstrip('/')
+        return base_url.rstrip('/') + '/' + url.lstrip('/')
     else:
         return url
-
-
-def validate_domain(url, domain):
-    if domain in url:
-        return True
-    return False
 
 
 def clear_file(file_name):

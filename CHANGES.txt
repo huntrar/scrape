@@ -1,3 +1,10 @@
+0.1.7
+------
+
+ - removed validate_domain and replaced it with a lambda instead
+ - replaced domain with base_url in set_base as should have been done before
+ - crawled message no longer prints if url was a duplicate
+
 0.1.6
 ------
 

@@ -15,7 +15,7 @@ import lxml.html as lh
 import pdfkit as pk
 
 import utils
-from . import __version__
+#from . import __version__
 
 
 def get_parser():
@@ -64,10 +64,10 @@ def crawl(args, url):
         clean_url removes www. and sets the scheme to http://
     '''
     if raw_links:
-        links = [utils.clean_url(utils.set_base(u, domain)) for u in raw_links]
+        links = [utils.clean_url(utils.set_base(u, url)) for u in raw_links]
 
         if restrict:
-            links = filter(lambda x: utils.validate_domain(x, domain), links)
+            links = filter(lambda x: domain in x, links)
 
         uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
 
@@ -90,15 +90,16 @@ def crawl(args, url):
                     clean_url removes www. and sets the scheme to http://
                 '''
                 if raw_links:
-                    links = [utils.clean_url(utils.set_base(u, domain)) for u in raw_links]
+                    links = [utils.clean_url(utils.set_base(u, url)) for u in raw_links]
 
                     if restrict:
-                        links = filter(lambda x: utils.validate_domain(x, domain), links)
+                        links = filter(lambda x: domain in x, links)
 
                     uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
 
-                crawled_links.add(url)
-                print('Crawled {} (#{}).'.format(url, len(crawled_links)))
+                if url not in crawled_links:
+                    crawled_links.add(url)
+                    print('Crawled {} (#{}).'.format(url, len(crawled_links)))
     except KeyboardInterrupt:
         pass
 
