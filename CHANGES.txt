@@ -1,3 +1,10 @@
+0.1.5
+------
+
+ - set_domain was replaced by set_base, proper solution for links that are relative
+ - fixed verbose behavior
+ - updated description in README
+
 0.1.4
 ------
 

@@ -15,7 +15,7 @@ import lxml.html as lh
 import pdfkit as pk
 
 import utils
-from . import __version__
+#from . import __version__
 
 
 def get_parser():
@@ -60,11 +60,11 @@ def crawl(args, url):
         raw_links = []
 
     ''' Clean the links, filter by domain if necessary, and update sets
-        set_domain inserts the domain from the seed url if none is found
+        set_base inserts the base url if necessary
         clean_url removes www. and sets the scheme to http://
     '''
     if raw_links:
-        links = [utils.clean_url(utils.set_domain(u, domain)) for u in raw_links]
+        links = [utils.clean_url(utils.set_base(u, domain)) for u in raw_links]
 
         if restrict:
             links = filter(lambda x: utils.validate_domain(x, domain), links)
@@ -86,11 +86,11 @@ def crawl(args, url):
                     raw_links = []
 
                 ''' Clean the links, filter by domain if necessary, and update sets
-                    set_domain inserts the domain from the seed url if none is found
+                    set_base inserts the base url if necessary
                     clean_url removes www. and sets the scheme to http://
                 '''
                 if raw_links:
-                    links = [utils.clean_url(utils.set_domain(u, domain)) for u in raw_links]
+                    links = [utils.clean_url(utils.set_base(u, domain)) for u in raw_links]
 
                     if restrict:
                         links = filter(lambda x: utils.validate_domain(x, domain), links)
@@ -127,14 +127,15 @@ def write_pages(args, links, file_name):
         if len(links) > 1:
             options['ignore-load-errors'] = None
 
-        if not args['verbose']:
+        verbose = args['verbose']
+        if not verbose:
             options['quiet'] = None
 
         try:
             pk.from_url(links, file_name, options=options)
         except Exception as e:
-            sys.stderr.write('Could not convert to PDF.\n')
-            sys.stderr.write(str(e) + '\n')
+            if verbose:
+                print(str(e))
     else:
         file_name = file_name + '.txt'
         utils.clear_file(file_name)

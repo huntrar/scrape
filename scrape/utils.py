@@ -150,9 +150,9 @@ def validate_url(url):
     return False
 
 
-def set_domain(url, domain):
-    if not '{url.netloc}'.format(url=urlparse(url)) and '/' in url:
-        return domain + url
+def set_base(url, base_url):
+    if not '{url.netloc}'.format(url=urlparse(url)):
+        return base_url + '/' + url.lstrip('/')
     else:
         return url
 
