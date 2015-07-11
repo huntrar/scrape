@@ -106,6 +106,7 @@ def get_html(url):
 
 
 def filter_re(lines, regexps):
+    if regexps:
         regexps = map(re.compile, regexps)
         matched_lines = []
         for line in lines:
@@ -116,14 +117,11 @@ def filter_re(lines, regexps):
                     if group:
                         matched_lines.append(line)
         return matched_lines
+    return lines
 
 
 def get_text(html, kws):
-    text = html.xpath('//*[not(self::script)]/text()')
-
-    if kws:
-        text = filter_re(text, kws)
-
+    text = filter_re(html.xpath('//*[not(self::script) and not(self::style)]/text()'), kws)
     return [filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n' for line in text]
 
 
@@ -175,5 +173,6 @@ def clear_file(file_name):
 def write_file(text, file_name):
     with open(file_name, 'a') as f:
         for line in text:
-            f.write(line)
+            if line.strip():
+                f.write(line)
         f.write('\n')
