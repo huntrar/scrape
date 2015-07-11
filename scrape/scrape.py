@@ -14,7 +14,7 @@ import lxml.html as lh
 import pdfkit as pk
 
 import utils
-#from . import __version__
+from . import __version__
 
 
 def get_parser():
