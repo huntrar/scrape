@@ -30,10 +30,10 @@ News
 setup(
     name='scrape',
     version=scrape.__version__,
-    description='a webpage scraping tool',
+    description='a web scraping tool',
     long_description=long_description,
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Environment :: Web Environment",
         "Intended Audience :: End Users/Desktop",
@@ -43,7 +43,7 @@ setup(
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
     ],
-    keywords='scrape webpage website pdf text keyword crawl save page',
+    keywords='scrape webpage website pdf text keyword crawl save page filter regex lxml html',
     author='Hunter Hammond',
     author_email='huntrar@gmail.com',
     maintainer='Hunter Hammond',

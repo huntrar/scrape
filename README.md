@@ -7,9 +7,9 @@ a web scraping tool
 * `pip install scrape`
 
 ## Usage
-    usage: scrape [-h] [-f [FILTER [FILTER ...]]] [-c [CRAWL [CRAWL ...]]] [-ca]
-                  [-l LIMIT] [-t] [-vb] [-v]
-                  [urls [urls ...]]
+    usage: scrape.py [-h] [-c [CRAWL [CRAWL ...]]] [-ca]
+                     [-f [FILTER [FILTER ...]]] [-l LIMIT] [-p] [-s] [-v] [-vb]
+                     [urls [urls ...]]
     
     a web scraping tool
     
@@ -18,26 +18,29 @@ a web scraping tool
     
     optional arguments:
       -h, --help            show this help message and exit
-      -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
-                            filter lines by keywords, text only
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
-                            enter keywords to crawl links
+                            keywords to crawl links by
       -ca, --crawl-all      crawl all links
+      -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
+                            filter lines of text by keywords
       -l LIMIT, --limit LIMIT
-                            crawl page limit
-      -t, --text            write to text instead of pdf
-      -vb, --verbose        show pdfkit messages
+                            set crawl page limit
+      -p, --pdf             write to pdf instead of text
+      -r, --restrict        restrict domain to that of the seed url
       -v, --version         display current version
+      -vb, --verbose        print pdfkit log messages
 
 ## Author
 * Hunter Hammond (huntrar@gmail.com)
 
 ## Notes
-* Unless specified using the --text flag, all webpages are saved as pdf files using pdfkit.
+* --pdf can be used to save web pages as pdf's, they are saved to text by default.
 
-* The --filter flag may be used in conjunction with --text to only save lines matching one or more keywords provided
+* Text can be filtered by passing one or more regexps to --filter.
 
-* Subsequent links may be followed by entering --crawl-all or --crawl. --crawl accepts a list of substrings to control which URL's to crawl, while --crawl-all will attempt to follow links indefinitely.
+* To crawl subsequent pages, enter --crawl followed by one or more regexps or instead enter --crawl-all.
 
-* There is no limit to the number of pages to be crawled unless one is set using the --limit flag, thus to cancel crawling and begin processing simply press Ctrl-C.
+* To restrict the domain to the seed url's domain, use --strict, otherwise any domain may be followed.
+
+* There is no limit to the number of pages to be crawled unless one is set with --limit, thus to cancel crawling and begin processing simply press Ctrl-C.
 

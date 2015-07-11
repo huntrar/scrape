@@ -1,3 +1,14 @@
+0.1.0
+------
+
+ - reformatting to conform with PEP 8
+ - added regexp support for matching crawl keywords and filter text keywords
+ - improved url resolution by correcting domains and schemes
+ - added --restrict option to restrict crawler links to only those with seed domain
+ - made text the default write option rather than pdf, can now use --pdf to change that
+ - removed page number being written to text, separator is now just a single blank line
+ - improved construction of output file name
+
 0.0.11
 ------
 

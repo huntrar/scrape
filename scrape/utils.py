@@ -1,8 +1,11 @@
 from collections import MutableSet
+from os import remove
 import random
+import re
 import requests
 import string
 import sys
+from urlparse import urlparse
 
 import lxml.html as lh
 
@@ -102,32 +105,75 @@ def get_html(url):
         return []
 
 
+def filter_re(lines, regexps):
+        regexps = map(re.compile, regexps)
+        matched_lines = []
+        for line in lines:
+            for regexp in regexps:
+                found = regexp.search(line)
+                if found:
+                    group = found.group()
+                    if group:
+                        matched_lines.append(line)
+        return matched_lines
+
+
 def get_text(html, kws):
     text = html.xpath('//*[not(self::script)]/text()')
-    new_text = []
-    for line in text:
-        if kws:
-            for kw in kws:
-                if kw.strip() in line:
-                    if line.strip():
-                        new_text.append(filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n')
-                    break
-        else:
-            if line.strip():
-                new_text.append(filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n')
-    return new_text 
+
+    if kws:
+        text = filter_re(text, kws)
+
+    return [filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n' for line in text]
+
+
+def set_scheme(url):
+    url = url.replace('https://', 'http://')
+    if 'http://' not in url:
+        return 'http://' + url
+    return url
 
 
 def clean_url(url):
-    if 'http://' not in url and 'https://' not in url:
-        url = 'https://' + url
+    url = set_scheme(url)
+    return url.replace('//www.', '//')
+
+
+def resolve_url(url):
+    url = set_scheme(url)
     if '.' not in url:
         url = url + '.com'
     return url
 
 
-def validate_url(url):
-    if 'http://' not in url and 'https://' not in url:
-        return False
-    return True
+def set_domain(url, domain):
+    if not '{url.netloc}'.format(url=urlparse(url)) and '/' in url:
+        return domain + url
+    else:
+        return url
 
+
+def validate_url(url):
+    if url and ('http://' in url or 'https://' in url):
+        return True
+    return False
+
+
+def validate_domain(url, domain):
+    if domain in url:
+        return True
+    return False
+
+
+def clear_file(file_name):
+    try:
+        remove(file_name)
+    except OSError:
+        pass
+
+
+def write_file(text, file_name):
+    with open(file_name, 'a') as f:
+        for line in text:
+            f.write(line)
+        f.write('\n')

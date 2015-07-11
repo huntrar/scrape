@@ -10,139 +10,170 @@ import argparse
 import sys
 from urlparse import urlparse
 
-from utils import *
-from . import __version__
-
 import lxml.html as lh
 import pdfkit as pk
+
+import utils
+#from . import __version__
 
 
 def get_parser():
     parser = argparse.ArgumentParser(description='a web scraping tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='urls to scrape')
-    parser.add_argument('-f', '--filter', type=str, nargs='*', 
-                        help='filter lines by keywords, text only')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
-                        help='enter keywords to crawl links')
+                        help='keywords to crawl links by')
     parser.add_argument('-ca', '--crawl-all', help='crawl all links',
                         action='store_true')
-    parser.add_argument('-l', '--limit', type=int, help='crawl page limit')
-    parser.add_argument('-t', '--text', help='write to text instead of pdf',
+    parser.add_argument('-f', '--filter', type=str, nargs='*', 
+                        help='filter lines of text by keywords')
+    parser.add_argument('-l', '--limit', type=int, help='set crawl page limit')
+    parser.add_argument('-p', '--pdf', help='write to pdf instead of text',
                         action='store_true')
-    parser.add_argument('-vb', '--verbose', help='show pdfkit messages',
+    parser.add_argument('-s', '--restrict', help='restrict domain to that of the seed url',
                         action='store_true')
     parser.add_argument('-v', '--version', help='display current version',
+                        action='store_true')
+    parser.add_argument('-vb', '--verbose', help='print pdfkit log messages',
                         action='store_true')
     return parser
 
 
-def crawl(args, url, limit):
-    # These are keywords to filter links by
-    filter_words = args['crawl']
+def crawl(args, url):
+    # The limit on number of pages to be crawled
+    limit = args['limit']
 
-    uncrawled_links = OrderedSet()
-    crawled_links = OrderedSet()
+    # Whether links must share the same domain as the seed url
+    restrict = args['restrict']
 
-    crawl_ct = 0
+    # Domain of the seed url
+    domain = args['domain']
 
-    links_to_crawl = get_html(url).xpath('//a/@href')
+    # OrderedSet class defined in utils.py
+    uncrawled_links = utils.OrderedSet()
+    crawled_links = utils.OrderedSet()
+
+    html = utils.get_html(url)
+    if len(html) > 0:
+        raw_links = html.xpath('//a/@href')
+    else:
+        raw_links = []
+
+    if raw_links:
+        ''' set_domain inserts the domain from the seed url if none is found
+            clean_url removes www. and sets the scheme to http://
+        '''
+        links = [utils.clean_url(utils.set_domain(u, domain)) for u in raw_links]
+
+        if restrict:
+            links = filter(lambda x: utils.validate_domain(x, domain), links)
+
+        uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
+
     crawled_links.add(url)
-    crawl_ct += 1
-    uncrawled_links.update(links_to_crawl)
+    print('Crawled {} (#{}).'.format(url, len(crawled_links)))
     
     try:
-        while uncrawled_links and (len(crawled_links) < limit or limit is None):
+        while uncrawled_links and (not limit or len(crawled_links) < limit):
             url = uncrawled_links.pop(last=False)
 
-            if url not in crawled_links and validate_url(url):
-                links_to_crawl = get_html(url).xpath('//a/@href')
+            if utils.validate_url(url):
+                html = utils.get_html(url)
+                if len(html) > 0:
+                    raw_links = html.xpath('//a/@href')
+                else:
+                    raw_links = []
+
+                if raw_links:
+                    ''' set_domain inserts the domain from the seed url if none is found
+                        clean_url removes www. and sets the scheme to http://
+                    '''
+                    links = [utils.clean_url(utils.set_domain(u, domain)) for u in raw_links]
+
+                    if restrict:
+                        links = filter(lambda x: utils.validate_domain(x, domain), links)
+
+                    uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
+
                 crawled_links.add(url)
-                crawl_ct += 1
-                print('Crawled {} ({}).'.format(url, crawl_ct))
-                uncrawled_links.update(links_to_crawl)
+                print('Crawled {} (#{}).'.format(url, len(crawled_links)))
     except KeyboardInterrupt:
         pass
 
+    # Optional filter keywords passed to --crawl option
+    filter_words = args['crawl']
     if filter_words:
-        return filter(lambda x: x in filter_words, crawled_links)
-    else:
-        return list(crawled_links)
+        return utils.filter_re(crawled_links, filter_words)
+
+    return list(crawled_links)
 
 
-def write_pages(args, links, filename):
-    if args['text']: 
-        filename = filename + '.txt'
-        print('Attempting to write {} page(s) to {}.'.format(len(links), filename))
+def write_pages(args, links, file_name):
+    if args['pdf']: 
+        file_name = file_name + '.pdf'
+        utils.clear_file(file_name)
 
-        print_pg_num = len(links) > 1
-
-        for i, link in enumerate(links):
-            html = get_html(link)
-
-            if len(html) > 0:
-                text = get_text(html, args['filter'])
-                if text:
-                    with open(filename, 'a') as f:
-                        # Print page number if number of pages exceeds 1
-                        if print_pg_num:
-                            f.write('\n\n')
-                            f.write('~~~ Page {} ~~~\n'.format(str(i+1)))
-
-                        for line in text:
-                            f.write(line)
-            else:
-                sys.stderr.write('Failed to parse {}.\n'.format(link))
-    else:
-        filename = filename + '.pdf'
-        print('Attempting to write {} page(s) to {}.'.format(len(links), filename))
+        print('Attempting to write {} page(s) to {}.'.format(len(links), file_name))
         
+        ''' Set pdfkit options
+            Only ignore errors if there is more than one link
+            This is to prevent an empty pdf being written
+            But if links > 1 we don't want one failure to prevent writing others
+        '''
         options = {}
         
-        ''' Only ignore errors if there is more than one link
-            This is to prevent an empty pdf being written
-            But if links > 1 we don't want one failure to prevent writing all
-        '''
         if len(links) > 1:
             options['ignore-load-errors'] = None
 
         if not args['verbose']:
             options['quiet'] = None
+
         try:
-            pk.from_url(links, filename, options=options)
+            pk.from_url(links, file_name, options=options)
         except Exception as e:
-            sys.stderr.write('Failed to convert to pdf.\n')
+            sys.stderr.write('Could not convert to PDF.\n')
             sys.stderr.write(str(e) + '\n')
+    else:
+        file_name = file_name + '.txt'
+        utils.clear_file(file_name)
+
+        print('Attempting to write {} page(s) to {}.'.format(len(links), file_name))
+
+        for link in links:
+            html = utils.get_html(link)
+            if len(html) > 0:
+                text = utils.get_text(html, args['filter'])
+                if text:
+                    utils.write_file(text, file_name)
+            else:
+                sys.stderr.write('Failed to parse {}.\n'.format(link))
 
 
 def scrape(args):
     url = ''
+
     for u in args['urls']:
-        url = clean_url(u)
+        url = utils.resolve_url(u)
 
-        base_url = '{url.netloc}'.format(url=urlparse(url))
-        base_name = ''
-        for b in base_url.split('.'):
-            if len(b) > 3:
-                base_name = b
-                break
+        domain = '{url.netloc}'.format(url=urlparse(url))
+        args['domain'] = domain
 
-        tail_name = url.strip('/').split('/')[-1]
-        if '.' in tail_name:
-            filename = base_name
+        ''' Construct the output file name
+            The proper extension will be added in write_pages
+        '''
+        base_url = domain.split('.')[-2]
+        tail_url = url.strip('/').split('/')[-1]
+
+        if domain in tail_url:
+            out_file = domain
         else:
-            filename = base_name + '-' + tail_name
-
-        if args['limit']:
-            limit = args['limit']
-        else:
-            limit = None
+            out_file = domain + '-' + tail_url
 
         if args['crawl'] or args['crawl_all']:
-            links = crawl(args, url, limit)
+            links = crawl(args, url)
         else:
             links = [url]
-        write_pages(args, links, filename)
+        write_pages(args, links, out_file)
 
 
 def command_line_runner():
