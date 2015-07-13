@@ -40,7 +40,7 @@ def get_parser():
     return parser
 
 
-def crawl(args, url):
+def crawl(args, base_url):
     # Url keywords for filtering crawled links
     url_keywords = args['crawl']
 
@@ -57,17 +57,16 @@ def crawl(args, url):
     crawled_links = utils.OrderedSet()
     raw_links = utils.OrderedSet()
 
-    html = utils.get_html(url)
+    html = utils.get_html(base_url)
     if len(html) > 0:
         raw_links.update(html.xpath('//a/@href'))
 
     ''' Clean, filter, and update links
-        urljoin constructs an absolute url using a base url
-        clean_url sets the scheme to http://, removes url fragments, rstrips /
-        and removes www. from url
+        clean_url removes url fragments and constructs an absolute url using urlparse's urljoin.
+        Also strips punctuation from right end. Pass url and then base url. 
     '''
     if raw_links:
-        links = [utils.clean_url(urljoin(url, u)) for u in raw_links]
+        links = [utils.clean_url(u, base_url) for u in raw_links]
         raw_links.clear()
 
         ''' Domain may be restricted to the seed domain '''
@@ -79,11 +78,14 @@ def crawl(args, url):
             for kw in url_keywords:
                 links = filter(lambda x: kw in x, links)
 
-        uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
+        ''' Compare schemeless urls to prevent http:// and https:// duplicates '''
+        schemeless_crawled_links = map(utils.remove_scheme, crawled_links)
+        uncrawled_links.update(filter(lambda x: utils.remove_scheme(x) not in schemeless_crawled_links, links))
 
-    crawled_links.add(url)
-    print('Crawled {} (#{}).'.format(url, len(crawled_links)))
+    crawled_links.add(base_url)
+    print('Crawled {} (#{}).'.format(base_url, len(crawled_links)))
     
+    ''' Follow links found in base url '''
     try:
         while uncrawled_links and (not limit or len(crawled_links) < limit):
             url = uncrawled_links.pop(last=False)
@@ -94,12 +96,11 @@ def crawl(args, url):
                     raw_links.update(html.xpath('//a/@href'))
 
                 ''' Clean, filter, and update links
-                    urljoin constructs an absolute url using a base url
-                    clean_url sets the scheme to http://, removes url fragments, rstrips /
-                    and removes www. from url
+                    clean_url removes url fragments and constructs an absolute url using urlparse's urljoin.
+                    Also strips punctuation from right end. Pass url and then base url. 
                 '''
                 if raw_links:
-                    links = [utils.clean_url(urljoin(url, u)) for u in raw_links]
+                    links = [utils.clean_url(u, base_url) for u in raw_links]
                     raw_links.clear()
 
                     ''' Domain may be restricted to the seed domain '''
@@ -111,7 +112,9 @@ def crawl(args, url):
                         for kw in url_keywords:
                             links = filter(lambda x: kw in x, links)
 
-                    uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
+                    ''' Compare schemeless urls to prevent http:// and https:// duplicates '''
+                    schemeless_crawled_links = map(utils.remove_scheme, crawled_links)
+                    uncrawled_links.update(filter(lambda x: utils.remove_scheme(x) not in schemeless_crawled_links, links))
 
                 if url not in crawled_links:
                     if restrict:
@@ -132,7 +135,7 @@ def crawl(args, url):
     return list(crawled_links)
 
 
-def write_pages(args, links, file_name):
+def write_links(args, links, file_name):
     if args['pdf']: 
         file_name = file_name + '.pdf'
         utils.clear_file(file_name)
@@ -184,7 +187,7 @@ def scrape(args):
         parsed_url = urlparse(url)
 
         ''' Construct the output file name from partial domain and end of path
-            The proper extension will be added in write_pages
+            The proper extension will be added in write_links
         '''
         domain = '{url.netloc}'.format(url=parsed_url)
         if '.' in domain:
@@ -207,11 +210,14 @@ def scrape(args):
         else:
             out_file = base_url
 
+        ''' Crawl if necessary '''
         if args['crawl'] or args['crawl_all']:
             links = crawl(args, url)
         else:
             links = [url]
-        write_pages(args, links, out_file)
+
+        ''' Write links to text or pdf '''
+        write_links(args, links, out_file)
 
 
 def command_line_runner():

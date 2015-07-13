@@ -5,7 +5,7 @@ import re
 import requests
 import string
 import sys
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 
 import lxml.html as lh
 
@@ -130,23 +130,23 @@ def get_text(html, kws):
     return [filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n' for line in text]
 
 
-def set_scheme(url):
-    url = url.replace('https://', 'http://')
-    if 'http://' not in url:
-        return 'http://' + url
-    return url
+def remove_scheme(url):
+    return url.replace('http://', '').replace('https://', '')
 
 
-def clean_url(url):
-    url = set_scheme(url)
-    fragment = '{url.fragment}'.format(url=urlparse(url))
+def clean_url(url, base_url):
+    parsed_url = urlparse(url)
+    fragment = '{url.fragment}'.format(url=parsed_url)
     if fragment:
         url = url.split(fragment)[0]
-    return url.replace('//www.', '//').rstrip('#').rstrip('/')
+    
+    # If no domain was found in url then add the base
+    if not '{url.netloc}'.format(url=parsed_url):
+        url = urljoin(base_url, url) 
+    return url.rstrip(string.punctuation)
 
 
 def resolve_url(url):
-    url = set_scheme(url)
     if '.' not in url:
         url = url + '.com'
     return url.rstrip('/')

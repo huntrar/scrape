@@ -1,3 +1,9 @@
+0.1.10
+------
+
+ - now compares urls scheme-less before updating links to prevent http:// and https:// duplicates and replaced set_scheme with remove_scheme in utils.py
+ - renamed write_pages to write_links
+
 0.1.9
 ------
 
