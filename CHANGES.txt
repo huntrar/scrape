@@ -1,3 +1,13 @@
+0.1.9
+------
+
+ - added behavior for --crawl keywords in crawl method
+ - added a domain check before outputting crawled message or adding to crawled links
+ - domain key in args is now set to base domain for proper --restrict behavior
+ - clean_url now rstrips / character for proper link crawling
+ - resolve_url now rstrips / character for proper out_file writing
+ - updated description of --crawl flag
+
 0.1.8
 ------
 

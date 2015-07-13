@@ -20,7 +20,7 @@ scrape is a command-line tool for extracting webpages as text or pdf files. The 
     optional arguments:
       -h, --help            show this help message and exit
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
-                            keywords to crawl links by
+                            url keywords to crawl links by
       -ca, --crawl-all      crawl all links
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
                             filter lines of text by keywords
@@ -39,7 +39,7 @@ scrape is a command-line tool for extracting webpages as text or pdf files. The 
 
 * Text can be filtered by passing one or more regexps to --filter.
 
-* To crawl subsequent pages, enter --crawl followed by one or more regexps or instead enter --crawl-all.
+* To crawl subsequent pages, enter --crawl followed by one or more regexps which match part of the url. Or instead enter --crawl-all to follow all links.
 
 * To restrict the domain to the seed url's domain, use --strict, otherwise any domain may be followed.
 

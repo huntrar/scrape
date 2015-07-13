@@ -142,14 +142,14 @@ def clean_url(url):
     fragment = '{url.fragment}'.format(url=urlparse(url))
     if fragment:
         url = url.split(fragment)[0]
-    return url.replace('//www.', '//').strip('#')
+    return url.replace('//www.', '//').rstrip('#').rstrip('/')
 
 
 def resolve_url(url):
     url = set_scheme(url)
     if '.' not in url:
         url = url + '.com'
-    return url
+    return url.rstrip('/')
 
 
 def validate_url(url):

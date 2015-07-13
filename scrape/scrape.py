@@ -23,7 +23,7 @@ def get_parser():
     parser.add_argument('urls', type=str, nargs='*',
                         help='urls to scrape')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
-                        help='keywords to crawl links by')
+                        help='url keywords to crawl links by')
     parser.add_argument('-ca', '--crawl-all', help='crawl all links',
                         action='store_true')
     parser.add_argument('-f', '--filter', type=str, nargs='*', 
@@ -41,6 +41,9 @@ def get_parser():
 
 
 def crawl(args, url):
+    # Url keywords for filtering crawled links
+    url_keywords = args['crawl']
+
     # The limit on number of pages to be crawled
     limit = args['limit']
 
@@ -58,9 +61,9 @@ def crawl(args, url):
     if len(html) > 0:
         raw_links.update(html.xpath('//a/@href'))
 
-    ''' Clean the links, filter by domain if necessary, and update links
+    ''' Clean, filter, and update links
         urljoin constructs an absolute url using a base url
-        clean_url sets the scheme to http://, removes url fragments,
+        clean_url sets the scheme to http://, removes url fragments, rstrips /
         and removes www. from url
     '''
     if raw_links:
@@ -70,6 +73,11 @@ def crawl(args, url):
         ''' Domain may be restricted to the seed domain '''
         if restrict:
             links = filter(lambda x: domain in x, links)
+
+        ''' Links may have keywords to follow them by '''
+        if url_keywords:
+            for kw in url_keywords:
+                links = filter(lambda x: kw in x, links)
 
         uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
 
@@ -85,9 +93,9 @@ def crawl(args, url):
                 if len(html) > 0:
                     raw_links.update(html.xpath('//a/@href'))
 
-                ''' Clean the links, filter by domain if necessary, and update links
+                ''' Clean, filter, and update links
                     urljoin constructs an absolute url using a base url
-                    clean_url sets the scheme to http://, removes url fragments,
+                    clean_url sets the scheme to http://, removes url fragments, rstrips /
                     and removes www. from url
                 '''
                 if raw_links:
@@ -98,11 +106,21 @@ def crawl(args, url):
                     if restrict:
                         links = filter(lambda x: domain in x, links)
 
+                    ''' Links may have keywords to follow them by '''
+                    if url_keywords:
+                        for kw in url_keywords:
+                            links = filter(lambda x: kw in x, links)
+
                     uncrawled_links.update(filter(lambda x: x not in crawled_links, links))
 
                 if url not in crawled_links:
-                    crawled_links.add(url)
-                    print('Crawled {} (#{}).'.format(url, len(crawled_links)))
+                    if restrict:
+                        if domain in url:
+                            crawled_links.add(url)
+                            print('Crawled {} (#{}).'.format(url, len(crawled_links)))
+                    else: 
+                        crawled_links.add(url)
+                        print('Crawled {} (#{}).'.format(url, len(crawled_links)))
     except KeyboardInterrupt:
         pass
 
@@ -169,11 +187,12 @@ def scrape(args):
             The proper extension will be added in write_pages
         '''
         domain = '{url.netloc}'.format(url=parsed_url)
-        args['domain'] = domain
         if '.' in domain:
             base_url = domain.split('.')[-2]
         else:
             base_url = domain
+
+        args['domain'] = base_url # Only want base domain
 
         path = '{url.path}'.format(url=parsed_url)
         if '.' in path:
