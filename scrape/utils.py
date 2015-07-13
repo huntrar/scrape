@@ -80,6 +80,11 @@ class OrderedSet(MutableSet):
         return key
 
 
+    def clear(self):
+        while self:
+            self.pop()
+
+
     def __repr__(self):
         if not self:
             return '%s()' % (self.__class__.__name__,)
@@ -134,7 +139,10 @@ def set_scheme(url):
 
 def clean_url(url):
     url = set_scheme(url)
-    return url.replace('//www.', '//')
+    fragment = '{url.fragment}'.format(url=urlparse(url))
+    if fragment:
+        url = url.split(fragment)[0]
+    return url.replace('//www.', '//').strip('#')
 
 
 def resolve_url(url):
@@ -148,13 +156,6 @@ def validate_url(url):
     if url and ('http://' in url or 'https://' in url):
         return True
     return False
-
-
-def set_base(url, base_url):
-    if not '{url.netloc}'.format(url=urlparse(url)):
-        return base_url.rstrip('/') + '/' + url.lstrip('/')
-    else:
-        return url
 
 
 def clear_file(file_name):

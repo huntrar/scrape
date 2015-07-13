@@ -1,3 +1,12 @@
+0.1.8
+------
+
+ - removed url fragments
+ - replaced set_base with urlparse method urljoin
+ - out_file name construction now uses urlparse 'path' member
+ - raw_links is now an OrderedSet to try to eliminate as much processing as possible
+ - added clear method to OrderedSet in utils.py
+
 0.1.7
 ------
 

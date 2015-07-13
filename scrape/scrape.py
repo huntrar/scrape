@@ -9,7 +9,7 @@
 
 import argparse
 import sys
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 
 import lxml.html as lh
 import pdfkit as pk
@@ -52,20 +52,22 @@ def crawl(args, url):
 
     uncrawled_links = utils.OrderedSet()
     crawled_links = utils.OrderedSet()
+    raw_links = utils.OrderedSet()
 
     html = utils.get_html(url)
     if len(html) > 0:
-        raw_links = html.xpath('//a/@href')
-    else:
-        raw_links = []
+        raw_links.update(html.xpath('//a/@href'))
 
-    ''' Clean the links, filter by domain if necessary, and update sets
-        set_base inserts the base url if necessary
-        clean_url removes www. and sets the scheme to http://
+    ''' Clean the links, filter by domain if necessary, and update links
+        urljoin constructs an absolute url using a base url
+        clean_url sets the scheme to http://, removes url fragments,
+        and removes www. from url
     '''
     if raw_links:
-        links = [utils.clean_url(utils.set_base(u, url)) for u in raw_links]
+        links = [utils.clean_url(urljoin(url, u)) for u in raw_links]
+        raw_links.clear()
 
+        ''' Domain may be restricted to the seed domain '''
         if restrict:
             links = filter(lambda x: domain in x, links)
 
@@ -81,17 +83,18 @@ def crawl(args, url):
             if utils.validate_url(url):
                 html = utils.get_html(url)
                 if len(html) > 0:
-                    raw_links = html.xpath('//a/@href')
-                else:
-                    raw_links = []
+                    raw_links.update(html.xpath('//a/@href'))
 
-                ''' Clean the links, filter by domain if necessary, and update sets
-                    set_base inserts the base url if necessary
-                    clean_url removes www. and sets the scheme to http://
+                ''' Clean the links, filter by domain if necessary, and update links
+                    urljoin constructs an absolute url using a base url
+                    clean_url sets the scheme to http://, removes url fragments,
+                    and removes www. from url
                 '''
                 if raw_links:
-                    links = [utils.clean_url(utils.set_base(u, url)) for u in raw_links]
+                    links = [utils.clean_url(urljoin(url, u)) for u in raw_links]
+                    raw_links.clear()
 
+                    ''' Domain may be restricted to the seed domain '''
                     if restrict:
                         links = filter(lambda x: domain in x, links)
 
@@ -157,19 +160,33 @@ def scrape(args):
     for u in args['urls']:
         url = utils.resolve_url(u)
 
-        domain = '{url.netloc}'.format(url=urlparse(url))
-        args['domain'] = domain
+        ''' Split the url into the following components using urlparse
+        scheme, netloc, path, params, query, fragment
+        '''
+        parsed_url = urlparse(url)
 
-        ''' Construct the output file name
+        ''' Construct the output file name from partial domain and end of path
             The proper extension will be added in write_pages
         '''
-        base_url = domain.split('.')[-2]
-        tail_url = url.strip('/').split('/')[-1]
-
-        if base_url in tail_url:
-            out_file = base_url
+        domain = '{url.netloc}'.format(url=parsed_url)
+        args['domain'] = domain
+        if '.' in domain:
+            base_url = domain.split('.')[-2]
         else:
+            base_url = domain
+
+        path = '{url.path}'.format(url=parsed_url)
+        if '.' in path:
+            tail_url = path.split('.')[-2]
+        else:
+            tail_url = path
+
+        if tail_url:
+            if '/' in tail_url:
+                tail_url = tail_url.split('/')[-1]
             out_file = base_url + '-' + tail_url
+        else:
+            out_file = base_url
 
         if args['crawl'] or args['crawl_all']:
             links = crawl(args, url)
