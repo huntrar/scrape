@@ -1,5 +1,6 @@
 from collections import MutableSet
-from os import remove
+import hashlib
+import os
 import random
 import re
 import requests
@@ -98,16 +99,28 @@ class OrderedSet(MutableSet):
 
 
 
-def get_html(url):
+def get_str_html(url):
     try:
-        # Get HTML response
+        ''' Get text response '''
         headers={'User-Agent' : random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers)
-        return lh.fromstring(request.text.encode('utf-8'))
+        return request.text.encode('ascii', 'ignore')
     except Exception as e:
         sys.stderr.write('Failed to retrieve {}.\n'.format(url))
         sys.stderr.write(str(e) + '\n')
-        return []
+        return ''
+    
+
+def hash_text(text):
+    m = hashlib.md5()
+    m.update(text)
+    return m.hexdigest()
+
+
+def cache_page(page_cache, page_hash):
+    page_cache.append(page_hash)
+    if len(page_cache) > 10:
+        page_cache.pop(0)
 
 
 def filter_re(lines, regexps):
@@ -128,6 +141,31 @@ def filter_re(lines, regexps):
 def get_text(html, kws):
     text = filter_re(html.xpath('//*[not(self::script) and not(self::style)]/text()'), kws)
     return [filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n' for line in text]
+
+
+def get_domain(url):
+    domain = '{url.netloc}'.format(url=urlparse(url))
+    if '.' in domain:
+        return domain.split('.')[-2]
+    return domain
+
+
+def get_out_file(url, domain=None):
+    if domain is None:
+        domain = get_domain(url)
+
+    path = '{url.path}'.format(url=urlparse(url))
+    if '.' in path:
+        tail_url = path.split('.')[-2]
+    else:
+        tail_url = path
+
+    if tail_url:
+        if '/' in tail_url:
+            tail_url = tail_url.split('/')[-1]
+        return domain + '-' + tail_url
+    else:
+        return domain
 
 
 def remove_scheme(url):
@@ -160,7 +198,7 @@ def validate_url(url):
 
 def clear_file(file_name):
     try:
-        remove(file_name)
+        os.remove(file_name)
     except OSError:
         pass
 
@@ -171,5 +209,53 @@ def write_file(text, file_name):
             if line.strip():
                 f.write(line)
         f.write('\n')
+
+
+def change_directory(dir_name):
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+        os.chdir(dir_name)
+    else:
+        os.chdir(dir_name)
+
+
+def get_num_parts():
+    num_parts = 0
+    for file in os.listdir(os.getcwd()):
+        if 'PART' in file and file.endswith('.html'):
+            num_parts += 1
+    return num_parts
+
+
+def write_part_file(html, part_num=None):
+    if part_num is None:
+        part_num = get_num_parts() + 1
+
+    f_name = 'PART{}.html'.format(part_num)
+    with open(f_name, 'w') as f:
+        f.write(html)
+
+
+def get_part_files(num_parts=None):
+    if num_parts is None:
+        num_parts = get_num_parts()
+
+    return ['PART{}.html'.format(i) for i in xrange(1, num_parts+1)]
+
+
+def read_part_files(num_parts=None):
+    if num_parts is None:
+        num_parts = get_num_parts()
+
+    files = get_part_files(num_parts)
+    for file in files:
+        with open(file, 'r') as f:
+            yield f.read()
+
+
+def clear_part_files(num_parts=None):
+    files = get_part_files(num_parts)
+    for file in files:
+        clear_file(file)
 
 

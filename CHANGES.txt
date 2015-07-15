@@ -1,3 +1,12 @@
+0.2.0
+------
+
+ - pages are now saved as they are crawled to PART.html files and processed/removed as necessary, this greatly saves on program memory
+ - added a page cache with a limit of 10 for greater duplicate protection
+ - added --files option for keeping webpages as PART.html instead of saving as text or pdf, this also organizes them into a subdirectory named after the seed url's domain
+ - changed --restrict flag to --strict for restricting the domain to the seed domain while crawling
+ - more --verbose messages being printed
+
 0.1.10
 ------
 
