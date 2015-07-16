@@ -180,7 +180,10 @@ def write_pages(args, pages, file_name):
         ''' Attempt conversion to PDF '''
         try:
             pk.from_file(files, file_name, options=options)
-        except Exception as e:
+        except (KeyboardInterrupt, Exception) as e:
+            ''' Remove PART.html files '''
+            utils.clear_part_files()
+
             if verbose:
                 print(str(e))
     else:
@@ -208,47 +211,49 @@ def write_pages(args, pages, file_name):
 
 
 def scrape(args):
-    base_dir = os.getcwd()
-    for u in args['urls']:
-        try:
-            ''' resolve_url appends .com if no extension found, also rstrips / '''
-            url = utils.resolve_url(u)
+    try:
+        base_dir = os.getcwd()
+        for u in args['urls']:
+                ''' resolve_url appends .com if no extension found, also rstrips / '''
+                url = utils.resolve_url(u)
 
-            ''' Construct the output file name from partial domain and end of path
-                The proper extension will be added in write_pages
-            '''
-            domain = utils.get_domain(url)
-            args['domain'] = domain
+                ''' Construct the output file name from partial domain and end of path
+                    The proper extension will be added in write_pages
+                '''
+                domain = utils.get_domain(url)
+                args['domain'] = domain
 
-            if args['files']:
-                ''' Keep all scraped .html files and place them in a domain subdirectory
-                    change_directory creates the directory if it doesn't exist and calls chdir '''
-                utils.change_directory(domain)
+                if args['files']:
+                    ''' Keep all scraped .html files and place them in a domain subdirectory
+                        change_directory creates the directory if it doesn't exist and calls chdir '''
+                    utils.change_directory(domain)
+                    if args['verbose']:
+                        print('Creating directory {}/ to store PART.html files in.'.format(domain))
 
-            if args['crawl'] or args['crawl_all']:
-                ''' crawl traverses and saves all pages as PART.html files '''
-                pages = crawl(args, url)
-            else:
-                pages = [url]
-                utils.write_part_file(utils.get_str_html(url), len(pages))
+                if args['crawl'] or args['crawl_all']:
+                    ''' crawl traverses and saves all pages as PART.html files '''
+                    pages = crawl(args, url)
+                else:
+                    pages = [url]
+                    utils.write_part_file(utils.get_str_html(url), len(pages))
 
-            if args['files']:
-                ''' Return to base directory '''
-                os.chdir(base_dir)
-            else:
-                ''' Write pages to text or pdf '''
-                out_file = utils.get_out_file(url, domain)
-                write_pages(args, pages, out_file)
+                if args['files']:
+                    ''' Return to base directory '''
+                    os.chdir(base_dir)
+                else:
+                    ''' Write pages to text or pdf '''
+                    out_file = utils.get_out_file(url, domain)
+                    write_pages(args, pages, out_file)
 
-        except Exception as e:
-            if args['files']:
-                ''' Return to base directory '''
-                os.chdir(base_dir)
-            else:
-                ''' Remove PART.html files '''
-                utils.clear_part_files()
+    except (KeyboardInterrupt, Exception) as e:
+        if args['files']:
+            ''' Return to base directory '''
+            os.chdir(base_dir)
+        else:
+            ''' Remove PART.html files '''
+            utils.clear_part_files()
 
-            raise e
+        raise e
 
 
 def command_line_runner():

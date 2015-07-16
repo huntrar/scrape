@@ -1,3 +1,8 @@
+0.2.1
+------
+
+ - improvements to exception handling for proper PART file removal
+
 0.2.0
 ------
 
