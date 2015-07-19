@@ -104,7 +104,7 @@ def get_str_html(url):
         ''' Get text response '''
         headers={'User-Agent' : random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers)
-        return request.text.encode('ascii', 'ignore')
+        return request.text.encode('utf-8')
     except Exception as e:
         sys.stderr.write('Failed to retrieve {}.\n'.format(url))
         sys.stderr.write(str(e) + '\n')
@@ -140,7 +140,7 @@ def filter_re(lines, regexps):
 
 def get_text(html, kws):
     text = filter_re(html.xpath('//*[not(self::script) and not(self::style)]/text()'), kws)
-    return [filter(lambda x: x in string.printable, line.strip().encode('utf-8')) + '\n' for line in text]
+    return [filter(lambda x: x in string.printable, line.strip()) + '\n' for line in text]
 
 
 def get_domain(url):
