@@ -8,44 +8,42 @@ scrape is a command-line tool for extracting webpages as text or pdf files. The 
 * [Installing wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF)
 
 ## Usage
-    usage: scrape.py [-h] [-c [CRAWL [CRAWL ...]]] [-ca]
-                     [-f [FILTER [FILTER ...]]] [-fl] [-l LIMIT] [-p] [-s] [-v]
-                     [-vb]
-                     [urls [urls ...]]
+    usage: scrape [-h] [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
+                  [-ht] [-l LIMIT] [-p] [-q] [-s] [-t] [-v]
+                  [urls [urls ...]]
     
     a web scraping tool
     
     positional arguments:
-      urls                  urls to scrape
+      urls                  url(s) to scrape
     
     optional arguments:
       -h, --help            show this help message and exit
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
-                            url keywords to crawl links by
+                            regexp(s) to match links to crawl
       -ca, --crawl-all      crawl all links
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
-                            filter lines of text by keywords
-      -fl, --files          keep .html files instead of writing to text
+                            regexp(s) to filter lines of text
+      -ht, --html           save output as html
       -l LIMIT, --limit LIMIT
-                            set crawl page limit
-      -p, --pdf             write to pdf instead of text
-      -s, --strict          restrict crawling to domain of seed url
+                            set page crawling limit
+      -p, --pdf             save output as pdf
+      -q, --quiet           suppress output
+      -s, --strict          set crawler to not visit other websites
+      -t, --text            save output as text, default
       -v, --version         display current version
-      -vb, --verbose        print log and error messages
 
 ## Author
 * Hunter Hammond (huntrar@gmail.com)
 
 ## Notes
-* Conversion to text occurs by default, use --pdf or --files to save to pdf or .html files, respectively.
+* Text can be filtered line by line by passing one or more regexps to --filter.
 
-* Text can be filtered by passing one or more regexps to --filter.
+* Pages are saved temporarily as PART%d.html files during processing. These files are removed automatically if saving to text or pdf.
 
-* Pages are saved temporarily as PART.html files and removed after they are written to pdf or text. Using --files not only preserves these files but also creates subdirectories for them, named after their seed domain.
+* Entire websites can be downloaded by using the --crawl-all flag or by passing one or more regexps to --crawl, which filters through a list of URL's.
 
-* To crawl subsequent pages, enter --crawl followed by one or more regexps which match part of the url. To crawl all links regardless of the url, use --crawl-all.
+* If you do not want the crawler to follow links outside of the given website, use --strict.
 
-* To restrict the domain to the seed url's domain, use --strict, otherwise any domain may be followed.
-
-* There is no limit to the number of pages to be crawled unless one is set with --limit, thus to cancel crawling and begin processing simply press Ctrl-C.
+* Crawling can be stopped by Ctrl-C or by setting the number of pages to be crawled using --limit.
 
