@@ -1,3 +1,11 @@
+0.2.3
+------
+
+ - updated flags and flag help messages
+ - verbose now by default and reduced number of messages, use --quiet to silence messages
+ - changed name of --files flag to --html for saving output as html
+ - added --text flag, default is still text
+
 0.2.2
 ------
 

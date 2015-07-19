@@ -21,23 +21,25 @@ from . import __version__
 def get_parser():
     parser = argparse.ArgumentParser(description='a web scraping tool')
     parser.add_argument('urls', type=str, nargs='*',
-                        help='urls to scrape')
+                        help='url(s) to scrape')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
-                        help='url keywords to crawl links by')
+                        help='regexp(s) to match links to crawl')
     parser.add_argument('-ca', '--crawl-all', help='crawl all links',
                         action='store_true')
     parser.add_argument('-f', '--filter', type=str, nargs='*', 
-                        help='filter lines of text by keywords')
-    parser.add_argument('-fl', '--files', help='keep .html files instead of writing to text',
+                        help='regexp(s) to filter lines of text')
+    parser.add_argument('-ht', '--html', help='save output as html',
                         action='store_true')
-    parser.add_argument('-l', '--limit', type=int, help='set crawl page limit')
-    parser.add_argument('-p', '--pdf', help='write to pdf instead of text',
+    parser.add_argument('-l', '--limit', type=int, help='set page crawling limit')
+    parser.add_argument('-p', '--pdf', help='save output as pdf',
                         action='store_true')
-    parser.add_argument('-s', '--strict', help='restrict crawling to domain of seed url',
+    parser.add_argument('-q', '--quiet', help='suppress output',
+                        action='store_true')
+    parser.add_argument('-s', '--strict', help='set crawler to not visit other websites',
+                        action='store_true')
+    parser.add_argument('-t', '--text', help='save output as text, default',
                         action='store_true')
     parser.add_argument('-v', '--version', help='display current version',
-                        action='store_true')
-    parser.add_argument('-vb', '--verbose', help='print log and error messages',
                         action='store_true')
     return parser
 
@@ -55,8 +57,8 @@ def crawl(args, base_url):
     # Domain of the seed url
     domain = args['domain']
     
-    # Print error messages or not
-    verbose = args['verbose']
+    # Silence output or not
+    quiet = args['quiet']
 
     ''' crawled_links holds already crawled urls
         uncrawled_links holds urls to pop off from as a stack
@@ -86,7 +88,8 @@ def crawl(args, base_url):
         uncrawled_links.update(new_links)
         crawled_links.add(utils.remove_scheme(base_url))
         utils.write_part_file(html, len(crawled_links))
-        print('Crawled {} (#{}).'.format(base_url, len(crawled_links)))
+        if not quiet:
+            print('Crawled {} (#{}).'.format(base_url, len(crawled_links)))
         
         ''' Follow links found in base url
             Create a page cache, limit of 10 entries defined in cache_page in utils.py '''
@@ -127,26 +130,20 @@ def crawl(args, base_url):
                                     uncrawled_links.update(new_links)
                                     crawled_links.add(utils.remove_scheme(url))
                                     utils.write_part_file(html, len(crawled_links))
-                                    print('Crawled {} (#{}).'.format(url, len(crawled_links)))
-                                else:
-                                    if verbose:
-                                        sys.stderr.write('Domain {} was not found in {}.\n'.format(domain, url))
+                                    if not quiet:
+                                        print('Crawled {} (#{}).'.format(url, len(crawled_links)))
                             else: 
                                 ''' Update uncrawled links with new links, add scheme-less url to crawled links
                                     write_part_file creates a temporary PART.html file to be processed in write_pages '''
                                 uncrawled_links.update(new_links)
                                 crawled_links.add(utils.remove_scheme(url))
                                 utils.write_part_file(html, len(crawled_links))
-                                print('Crawled {} (#{}).'.format(url, len(crawled_links)))
+                                if not quiet:
+                                    print('Crawled {} (#{}).'.format(url, len(crawled_links)))
                         else:
-                            if verbose:
+                            if not quiet:
                                 sys.stderr.write('Failed to parse {}.\n'.format(url))
-                    else:
-                        if verbose:
-                            sys.stderr.write('{} already in cache.\n'.format(url))
-                else:
-                    if verbose:
-                        sys.stderr.write('{} was already crawled, or failed to validate.\n'.format(url))
+
         except KeyboardInterrupt:
             pass
 
@@ -158,8 +155,6 @@ def write_pages(args, pages, file_name):
         file_name = file_name + '.pdf'
         utils.clear_file(file_name)
 
-        print('Attempting to write {} page(s) to {}.'.format(len(pages), file_name))
-        
         ''' Set pdfkit options
             Only ignore errors if there is more than one page
             This is to prevent an empty pdf being written
@@ -170,9 +165,10 @@ def write_pages(args, pages, file_name):
         if len(pages) > 1:
             options['ignore-load-errors'] = None
 
-        verbose = args['verbose']
-        if not verbose:
+        if args['quiet']:
             options['quiet'] = None
+        else:
+            print('Attempting to write {} page(s) to {}.'.format(len(pages), file_name))
 
         ''' Gets PART.html filenames '''
         files = utils.get_part_files(len(pages))
@@ -184,13 +180,15 @@ def write_pages(args, pages, file_name):
             ''' Remove PART.html files '''
             utils.clear_part_files()
 
-            if verbose:
+            if not args['quiet']:
                 print(str(e))
     else:
         file_name = file_name + '.txt'
         utils.clear_file(file_name)
 
-        print('Attempting to write {} page(s) to {}.'.format(len(pages), file_name))
+        quiet = args['quiet']
+        if not quiet:
+            print('Attempting to write {} page(s) to {}.'.format(len(pages), file_name))
 
         ''' Reads PART.html files '''
         for i, html in enumerate(utils.read_part_files(len(pages))):
@@ -204,7 +202,8 @@ def write_pages(args, pages, file_name):
                 if text:
                     utils.write_file(text, file_name)
             else:
-                sys.stderr.write('Failed to parse part file {}.\n'.format(i+1))
+                if not quiet:
+                    sys.stderr.write('Failed to parse part file {}.\n'.format(i+1))
 
     ''' Remove PART.html files '''
     utils.clear_part_files()
@@ -223,12 +222,12 @@ def scrape(args):
                 domain = utils.get_domain(url)
                 args['domain'] = domain
 
-                if args['files']:
+                if args['html']:
                     ''' Keep all scraped .html files and place them in a domain subdirectory
                         change_directory creates the directory if it doesn't exist and calls chdir '''
                     utils.change_directory(domain)
-                    if args['verbose']:
-                        print('Creating directory {}/ to store PART.html files in.'.format(domain))
+                    if not args['quiet']:
+                        print('Storing html files in {}/'.format(domain))
 
                 if args['crawl'] or args['crawl_all']:
                     ''' crawl traverses and saves all pages as PART.html files '''
@@ -237,7 +236,7 @@ def scrape(args):
                     pages = [url]
                     utils.write_part_file(utils.get_str_html(url), len(pages))
 
-                if args['files']:
+                if args['html']:
                     ''' Return to base directory '''
                     os.chdir(base_dir)
                 else:
@@ -246,7 +245,7 @@ def scrape(args):
                     write_pages(args, pages, out_file)
 
     except (KeyboardInterrupt, Exception) as e:
-        if args['files']:
+        if args['html']:
             ''' Return to base directory '''
             os.chdir(base_dir)
         else:
@@ -263,6 +262,10 @@ def command_line_runner():
     if args['version']:
         print(__version__)
         return
+
+    if not args['text'] and not args['pdf'] and not args['html']:
+        if not args['quiet']:
+            print('Saving output as text by default. Specify an output type or use --quiet to silence this message.\n')
 
     if not args['urls']:
         parser.print_help()
