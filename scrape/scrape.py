@@ -22,6 +22,8 @@ def get_parser():
     parser = argparse.ArgumentParser(description='a web scraping tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='url(s) to scrape')
+    parser.add_argument('-a', '--attributes', type=str, nargs='*',
+                        help='tag attribute(s) for extracting lines of text, default is text')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
                         help='regexp(s) to match links to crawl')
     parser.add_argument('-ca', '--crawl-all', help='crawl all links',
@@ -197,7 +199,7 @@ def write_pages(args, pages, file_name):
 
             if len(html) > 0:
                 ''' Parse each page's html with lxml.html and get non-script text '''
-                text = utils.get_text(html, args['filter'])
+                text = utils.get_text(html, args['filter'], args['attributes'])
 
                 if text:
                     utils.write_file(text, file_name)

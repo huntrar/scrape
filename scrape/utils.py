@@ -138,8 +138,36 @@ def filter_re(lines, regexps):
     return lines
 
 
-def get_text(html, kws):
-    text = filter_re(html.xpath('//*[not(self::script) and not(self::style)]/text()'), kws)
+def clean_attr(attr):
+    if attr:
+        if 'text' in attr:
+            return 'text()'
+        else:
+            attr = attr.lstrip('@')
+
+    if attr:
+        return '@' + attr
+    return None
+
+
+def get_text(html, filter_words, attributes):
+    ''' attributes is the tag attribute(s) to extract from the page
+        if no attribute was supplied then clean_attr assumes text
+    '''
+    if attributes:
+        attributes = filter(None, map(clean_attr, attributes))
+    else:
+        attributes = ['text()']
+
+    text = []
+    for attr in attributes:
+        new_text = html.xpath('//*[not(self::script) and not(self::style)]/{}'.format(attr))
+
+        if filter_words:
+            new_text = filter_re(new_text, filter_words)
+
+        text += new_text
+
     return [filter(lambda x: x in string.printable, line.strip()) + '\n' for line in text]
 
 

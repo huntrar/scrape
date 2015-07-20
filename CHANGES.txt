@@ -1,3 +1,8 @@
+0.2.4
+------
+
+ - added attributes flag which specifies which tag attributes to extract from a given page, such as text, href, etc.
+
 0.2.3
 ------
 
