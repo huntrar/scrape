@@ -19,7 +19,7 @@ from . import __version__
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='a web scraping tool')
+    parser = argparse.ArgumentParser(description='a command-line web scraping tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='url(s) to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',

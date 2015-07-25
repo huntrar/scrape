@@ -1,6 +1,6 @@
 # scrape
 
-## a web scraping tool
+## a command-line web scraping tool
 scrape is a command-line tool for extracting webpages as text or pdf files. The crawling mechanism allows for entire websites to be scraped and also offers regexp support for filtering links and text content. scrape is especially useful for converting online documentation to pdf or just as a faster alternative to wget and grep!
 
 ## Installation
