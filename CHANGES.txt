@@ -1,3 +1,8 @@
+0.2.5
+------
+
+ - added requests to install_requires in setup.py
+
 0.2.4
 ------
 

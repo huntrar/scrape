@@ -58,6 +58,7 @@ setup(
     },
     install_requires=[
         'lxml',
-        'pdfkit'
+        'pdfkit',
+        'requests'
     ]
 )
