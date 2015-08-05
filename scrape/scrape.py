@@ -2,7 +2,7 @@
 
 #############################################################
 #                                                           #
-# scrape - a web scraping tool                              #
+# scrape - a command-line web scraping and crawling tool    #
 # written by Hunter Hammond (huntrar@gmail.com)             #
 #                                                           #
 #############################################################
@@ -19,7 +19,7 @@ from . import __version__
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='a command-line web scraping tool')
+    parser = argparse.ArgumentParser(description='a command-line web scraping and crawling tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='url(s) to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',

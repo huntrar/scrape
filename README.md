@@ -1,7 +1,7 @@
 # scrape
 
-## a command-line web scraping tool
-scrape is a command-line tool for extracting webpages as text or pdf files. The crawling mechanism allows for entire websites to be scraped and also offers regexp support for filtering links and text content. scrape is especially useful for converting online documentation to pdf or just as a faster alternative to wget and grep!
+## a command-line web scraping and crawling tool
+scrape is a command-line tool used to extract webpage content in the form of text, pdf, or simply html. A crawling mechanism allows scrape to follow subsequent webpages either freely or according to a set of keywords, making scraping entire websites a quick and easy task. scrape can extract text content for any tag attributes, such as href for links or text for plain text. Text can be filtered in a grep-like manner, saving you another extra step!
 
 ## Installation
 * `pip install scrape`
@@ -13,7 +13,7 @@ scrape is a command-line tool for extracting webpages as text or pdf files. The 
                      [-ht] [-l LIMIT] [-p] [-q] [-s] [-t] [-v]
                      [urls [urls ...]]
     
-    a web scraping tool
+    a command-line web scraping and crawling tool
     
     positional arguments:
       urls                  url(s) to scrape

@@ -30,7 +30,7 @@ News
 setup(
     name='scrape',
     version=scrape.__version__,
-    description='a web scraping tool',
+    description='a command-line web scraping tool',
     long_description=long_description,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
