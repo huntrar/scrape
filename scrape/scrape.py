@@ -33,11 +33,11 @@ def get_parser():
     parser.add_argument('-ht', '--html', help='save output as html',
                         action='store_true')
     parser.add_argument('-l', '--limit', type=int, help='set page crawling limit')
+    parser.add_argument('-n', '--nonstrict', help='set crawler to visit other websites',
+                        action='store_true')
     parser.add_argument('-p', '--pdf', help='save output as pdf',
                         action='store_true')
     parser.add_argument('-q', '--quiet', help='suppress output',
-                        action='store_true')
-    parser.add_argument('-s', '--strict', help='set crawler to not visit other websites',
                         action='store_true')
     parser.add_argument('-t', '--text', help='save output as text, default',
                         action='store_true')
@@ -47,19 +47,19 @@ def get_parser():
 
 
 def crawl(args, base_url):
-    # Url keywords for filtering crawled links
+    ''' Url keywords for filtering crawled links '''
     url_keywords = args['crawl']
 
-    # The limit on number of pages to be crawled
+    ''' The limit on number of pages to be crawled '''
     limit = args['limit']
 
-    # Whether links must share the same domain as the seed url
-    strict = args['strict']
+    ''' If True the crawler may travel outside the seed url's domain '''
+    nonstrict = args['nonstrict']
 
-    # Domain of the seed url
+    ''' Domain of the seed url '''
     domain = args['domain']
     
-    # Silence output or not
+    ''' If True then output is silenced '''
     quiet = args['quiet']
 
     ''' crawled_links holds already crawled urls
@@ -77,7 +77,7 @@ def crawl(args, base_url):
         new_links = [utils.clean_url(u, base_url) for u in lh_html.xpath('//a/@href')]
 
         ''' Domain may be restricted to the seed domain '''
-        if strict:
+        if not nonstrict:
             new_links = filter(lambda x: domain in x, new_links)
 
         ''' Links may have keywords to follow them by '''
@@ -123,7 +123,7 @@ def crawl(args, base_url):
                                     new_links = utils.filter_re(new_links, kw)
 
                             ''' Domain may be restricted to the seed domain '''
-                            if strict:
+                            if not nonstrict:
                                 if domain in url:
                                     new_links = filter(lambda x: domain in x, new_links)
 

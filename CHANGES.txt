@@ -1,3 +1,8 @@
+0.2.8
+------
+
+ - restricts crawling to seed domain by default, changed --strict to --nonstrict for crawling outside given website
+
 0.2.5
 ------
 

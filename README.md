@@ -10,7 +10,7 @@ scrape is a command-line tool used to extract webpage content in the form of tex
 ## Usage
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
                      [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
-                     [-ht] [-l LIMIT] [-p] [-q] [-s] [-t] [-v]
+                     [-ht] [-l LIMIT] [-n] [-p] [-q] [-t] [-v]
                      [urls [urls ...]]
     
     a command-line web scraping and crawling tool
@@ -31,9 +31,9 @@ scrape is a command-line tool used to extract webpage content in the form of tex
       -ht, --html           save output as html
       -l LIMIT, --limit LIMIT
                             set page crawling limit
+      -n, --nonstrict       set crawler to visit other websites
       -p, --pdf             save output as pdf
       -q, --quiet           suppress output
-      -s, --strict          set crawler to not visit other websites
       -t, --text            save output as text, default
       -v, --version         display current version
 
@@ -51,7 +51,7 @@ scrape is a command-line tool used to extract webpage content in the form of tex
 
 * Entire websites can be downloaded by using the --crawl-all flag or by passing one or more regexps to --crawl, which filters through a list of URL's.
 
-* If you do not want the crawler to follow links outside of the given website, use --strict.
+* If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
 
 * Crawling can be stopped by Ctrl-C or by setting the number of pages to be crawled using --limit.
 
