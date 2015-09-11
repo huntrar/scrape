@@ -1,3 +1,8 @@
+0.2.9
+------
+
+ - updated program description and keywords in setup.py
+
 0.2.8
 ------
 
