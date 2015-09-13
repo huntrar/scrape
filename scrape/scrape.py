@@ -14,6 +14,7 @@ import sys
 import lxml.html as lh
 import pdfkit as pk
 
+from orderedset import OrderedSet
 import utils
 from . import __version__
 
@@ -66,7 +67,7 @@ def crawl(args, base_url):
         uncrawled_links holds urls to pop off from as a stack
     '''
     crawled_links = set()
-    uncrawled_links = utils.OrderedSet()
+    uncrawled_links = OrderedSet()
 
     html = utils.get_str_html(base_url)
     if len(html) > 0:
