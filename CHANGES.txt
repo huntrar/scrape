@@ -1,3 +1,11 @@
+0.3.0
+------
+
+ - added read option for user inputted html files, currently writes files individually and not grouped, to do next is add grouping option
+ - added html/ directory containing test html files
+ - made relative imports explicit using absolute_import
+ - added proxies to utils.py
+
 0.2.10
 ------
 

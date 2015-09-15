@@ -8,9 +8,10 @@ scrape is a command-line tool used to extract webpage content in the form of tex
 * [Installing wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF)
 
 ## Usage
-    usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
-                     [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
-                     [-ht] [-l LIMIT] [-n] [-p] [-q] [-t] [-v]
+    usage: scrape.py [-h] [-r [READ [READ ...]]]
+                     [-a [ATTRIBUTES [ATTRIBUTES ...]]] [-c [CRAWL [CRAWL ...]]]
+                     [-ca] [-f [FILTER [FILTER ...]]] [-ht] [-l LIMIT] [-n] [-p]
+                     [-q] [-t] [-v]
                      [urls [urls ...]]
     
     a command-line web scraping and crawling tool
@@ -20,6 +21,8 @@ scrape is a command-line tool used to extract webpage content in the form of tex
     
     optional arguments:
       -h, --help            show this help message and exit
+      -r [READ [READ ...]], --read [READ [READ ...]]
+                            read in local html file(s)
       -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
                             tag attribute(s) for extracting lines of text, default
                             is text

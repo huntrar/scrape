@@ -10,24 +10,44 @@ import lxml.html as lh
 import requests
 
 
+try:
+    from urllib import getproxies
+except ImportError:
+    from urllib.request import getproxies
+
+
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
                 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
                 'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',
                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5',
                 'Mozilla/5.0 (Windows; Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5')
 
+CACHE_SIZE = 10 # Number of pages to temporarily cache for preventing duplicates 
 
-def get_str_html(url):
+
+def get_proxies():
+    proxies = getproxies()
+    filtered_proxies = {}
+    for k, v in proxies.items():
+        if k.startswith('http://'):
+            if not v.startswith('http://'):
+                filtered_proxies[k] = 'http://{0}'.format(v)
+            else:
+                filtered_proxies[k] = v
+    return filtered_proxies
+
+
+def get_html(url):
     try:
-        ''' Get text response '''
+        ''' Get HTML response as an lxml.html.HtmlElement object '''
         headers={'User-Agent' : random.choice(USER_AGENTS)}
-        request = requests.get(url, headers=headers)
-        return request.text.encode('utf-8')
+        request = requests.get(url, headers=headers, proxies=get_proxies())
+        return lh.fromstring(request.text.encode('utf-8'))
     except Exception as e:
-        sys.stderr.write('Failed to retrieve {}.\n'.format(url))
-        sys.stderr.write(str(e) + '\n')
-        return ''
-    
+        sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
+        sys.stderr.write('{0}\n'.format(str(e)))
+        return None
+
 
 def hash_text(text):
     m = hashlib.md5()
@@ -37,7 +57,7 @@ def hash_text(text):
 
 def cache_page(page_cache, page_hash):
     page_cache.append(page_hash)
-    if len(page_cache) > 10:
+    if len(page_cache) > CACHE_SIZE:
         page_cache.pop(0)
 
 
@@ -79,7 +99,7 @@ def get_text(html, filter_words, attributes):
 
     text = []
     for attr in attributes:
-        new_text = html.xpath('//*[not(self::script) and not(self::style)]/{}'.format(attr))
+        new_text = html.xpath('//*[not(self::script) and not(self::style)]/{0}'.format(attr))
 
         if filter_words:
             new_text = filter_re(new_text, filter_words)
@@ -124,7 +144,7 @@ def clean_url(url, base_url):
     if fragment:
         url = url.split(fragment)[0]
     
-    # If no domain was found in url then add the base
+    ''' If no domain was found in url then add the base '''
     if not '{url.netloc}'.format(url=parsed_url):
         url = urljoin(base_url, url) 
     return url.rstrip(string.punctuation)
@@ -137,7 +157,7 @@ def resolve_url(url):
 
 
 def validate_url(url):
-    if url and ('http://' in url or 'https://' in url):
+    if url and (url.startswith('http://') or url.startswith('https://')):
         return True
     return False
 
@@ -177,7 +197,7 @@ def write_part_file(html, part_num=None):
     if part_num is None:
         part_num = get_num_parts() + 1
 
-    f_name = 'PART{}.html'.format(part_num)
+    f_name = 'PART{0}.html'.format(part_num)
     with open(f_name, 'w') as f:
         f.write(html)
 
@@ -186,7 +206,17 @@ def get_part_files(num_parts=None):
     if num_parts is None:
         num_parts = get_num_parts()
 
-    return ['PART{}.html'.format(i) for i in xrange(1, num_parts+1)]
+    return ['PART{0}.html'.format(i) for i in xrange(1, num_parts+1)]
+
+
+def read_files(files):
+    if isinstance(files, list):
+        for file in files:
+            with open(file, 'r') as f:
+                yield f.read()
+    else:
+        with open(file, 'r') as f:
+            yield f.read()
 
 
 def read_part_files(num_parts=None):
@@ -194,6 +224,7 @@ def read_part_files(num_parts=None):
         num_parts = get_num_parts()
 
     files = get_part_files(num_parts)
+
     for file in files:
         with open(file, 'r') as f:
             yield f.read()
