@@ -1,6 +1,8 @@
 # scrape
 
 ## a command-line web scraping and crawling tool
+[![Build Status](https://travis-ci.org/huntrar/scrape.svg?branch=master)](https://travis-ci.org/huntrar/scrape)
+
 scrape is a command-line tool used to quickly extract and filter webpages in a grep-like manner. It allows saving in the form of text, pdf, or HTML. Users may provide their own HTML files to convert or filter. A crawling mechanism allows scrape to traverse websites by regex keywords or can also be run freely. scrape can extract data from any DOM tags, an example being entering 'href' for all links or 'text' for all plaintext.
 
 ## Installation

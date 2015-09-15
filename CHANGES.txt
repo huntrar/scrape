@@ -1,3 +1,8 @@
+0.3.2
+------
+
+ - added travis-ci build status to readme
+
 0.3.1
 ------
 
