@@ -27,7 +27,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
                      [-q] [-t] [-v]
                      [urls [urls ...]]
     
-    a command-line web scraping and crawling tool
+    a command-line web scraping, crawling, and conversion tool
     
     positional arguments:
       urls                  url(s) to scrape

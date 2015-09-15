@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-#############################################################
-#                                                           #
-# scrape - a command-line web scraping and crawling tool    #
-# written by Hunter Hammond (huntrar@gmail.com)             #
-#                                                           #
-#############################################################
+######################################################################
+#                                                                    #
+# scrape - a command-line web scraping, crawling and conversion tool #
+# written by Hunter Hammond (huntrar@gmail.com)                      #
+#                                                                    #
+######################################################################
 
 from __future__ import absolute_import
 import argparse
@@ -21,7 +21,7 @@ from . import __version__
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='a command-line web scraping and crawling tool')
+    parser = argparse.ArgumentParser(description='a command-line web scraping, crawling, and conversion tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='url(s) to scrape')
     parser.add_argument('-r', '--read', type=str, nargs='*',
