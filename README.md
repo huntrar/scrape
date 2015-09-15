@@ -55,17 +55,13 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 * Hunter Hammond (huntrar@gmail.com)
 
 ## Notes
+* Supports both Python 2.x and Python 3.x.
 * Pages are converted to text by default, you can specify --html or --pdf to save to a different format.
-
-* If saving to text, lines may be filtered for keywords by passing one or more regexps to --filter.
-
-* Also if saving to text, you may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
-
-* Pages are saved temporarily as PART%d.html files during processing. These files are removed automatically if saving to text or pdf.
-
-* Entire websites can be downloaded by using the --crawl-all flag or by passing one or more regexps to --crawl, which filters through a list of URL's.
-
+* Use the --read flag to read in local HTML files and extract, filter, or convert their contents.
+* Filtering text is done by entering one or more regexps to --filter.
+* You may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
+* Pages are saved temporarily as PART(%d).html files during processing and are removed automatically upon format conversion or unexpected exit.
+* Entire websites can be downloaded by using the --crawl-all flag or by passing one or more regexps to --crawl, which filters a list of URL's.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
-
 * Crawling can be stopped by Ctrl-C or by setting the number of pages to be crawled using --limit.
 

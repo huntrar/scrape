@@ -2,7 +2,7 @@
 ------
 
  - updated program description and added extra installation instructions
- - added .travis.yml
+ - added .travis.yml and requirements.txt
 
 0.3.0
 ------
