@@ -1,11 +1,22 @@
 # scrape
 
 ## a command-line web scraping and crawling tool
-scrape is a command-line tool used to extract webpage content in the form of text, pdf, or simply html. A crawling mechanism allows scrape to follow subsequent webpages either freely or according to a set of keywords, making scraping entire websites a quick and easy task. scrape can extract text content for any tag attributes, such as href for links or text for plain text. Text can be filtered in a grep-like manner, saving you another extra step!
+scrape is a command-line tool used to quickly extract and filter webpages in a grep-like manner. It allows saving in the form of text, pdf, or HTML. Users may provide their own HTML files to convert or filter. A crawling mechanism allows scrape to traverse websites by regex keywords or can also be run freely. scrape can extract data from any DOM tags, an example being entering 'href' for all links or 'text' for all plaintext.
 
 ## Installation
-* `pip install scrape`
-* [Installing wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF)
+    pip install scrape
+
+or
+
+    pip install git+https://github.com/huntrar/scrape.git#egg=scrape
+
+or
+
+    git clone https://github.com/huntrar/scrape
+    cd scrape
+    python setup.py install
+
+You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF) to save files to pdf.
 
 ## Usage
     usage: scrape.py [-h] [-r [READ [READ ...]]]

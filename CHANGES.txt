@@ -1,3 +1,9 @@
+0.3.1
+------
+
+ - updated program description and added extra installation instructions
+ - added .travis.yml
+
 0.3.0
 ------
 
