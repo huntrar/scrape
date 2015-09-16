@@ -1,9 +1,8 @@
-# scrape
+# scrape [![Build Status](https://travis-ci.org/huntrar/scrape.svg?branch=master)](https://travis-ci.org/huntrar/scrape) [![PyPI](https://img.shields.io/pypi/dm/scrape.svg?style=flat)]()
 
 ## a command-line web scraping, crawling, and conversion tool
-[![Build Status](https://travis-ci.org/huntrar/scrape.svg?branch=master)](https://travis-ci.org/huntrar/scrape)
 
-scrape is a command-line tool used to quickly extract and filter webpages in a grep-like manner. It allows saving in the form of text, pdf, or HTML. Users may provide their own HTML files to convert or filter. A crawling mechanism allows scrape to traverse websites by regex keywords or can also be run freely. scrape can extract data from any DOM tags, an example being entering 'href' for all links or 'text' for all plaintext.
+scrape is a command-line tool used to extract, filter, and convert webpages to text, PDF, or HTML files. A link-crawling mechanism allows scrape to traverse websites following regexp statements or instead run freely. Any HTML attribute may be extracted; entering 'text' would extract plaintext, and 'href' would extract all links. Users may also choose to enter local HTML files to filter or convert.
 
 ## Installation
     pip install scrape
