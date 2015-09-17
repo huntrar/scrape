@@ -16,43 +16,50 @@ except ImportError:
     from urllib.request import getproxies
 
 
-USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
-                'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
-                'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5',
-                'Mozilla/5.0 (Windows; Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46 Safari/536.5')
+USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
+               'Gecko/20100101 Firefox/11.0',
+               'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) '
+               'Gecko/20100 101 Firefox/22.0',
+               'Mozilla/5.0 (Windows NT 6.1; rv:11.0) '
+               'Gecko/20100101 Firefox/11.0',
+               'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) '
+               'AppleWebKit/536.5 (KHTML, like Gecko) '
+               'Chrome/19.0.1084.46 Safari/536.5',
+               'Mozilla/5.0 (Windows; Windows NT 6.1) '
+               'AppleWebKit/536.5 (KHTML, like Gecko) '
+               'Chrome/19.0.1084.46 Safari/536.5')
 
-CACHE_SIZE = 10 # Number of pages to temporarily cache for preventing duplicates 
+CACHE_SIZE = 10 # Number of pages to temporarily cache for preventing dupes
 
 
 def get_proxies():
     proxies = getproxies()
     filtered_proxies = {}
-    for k, v in proxies.items():
-        if k.startswith('http://'):
-            if not v.startswith('http://'):
-                filtered_proxies[k] = 'http://{0}'.format(v)
+    for key, value in proxies.items():
+        if key.startswith('http://'):
+            if not value.startswith('http://'):
+                filtered_proxies[key] = 'http://{0}'.format(value)
             else:
-                filtered_proxies[k] = v
+                filtered_proxies[key] = value
     return filtered_proxies
 
 
 def get_html(url):
     try:
         ''' Get HTML response as an lxml.html.HtmlElement object '''
-        headers={'User-Agent' : random.choice(USER_AGENTS)}
+        headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
         return lh.fromstring(request.text.encode('utf-8'))
-    except Exception as e:
+    except Exception as err:
         sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
-        sys.stderr.write('{0}\n'.format(str(e)))
+        sys.stderr.write('{0}\n'.format(str(err)))
         return None
 
 
 def hash_text(text):
-    m = hashlib.md5()
-    m.update(text)
-    return m.hexdigest()
+    md5 = hashlib.md5()
+    md5.update(text)
+    return md5.hexdigest()
 
 
 def cache_page(page_cache, page_hash):
@@ -63,7 +70,7 @@ def cache_page(page_cache, page_hash):
 
 def filter_re(lines, regexps):
     if regexps:
-        regexps = map(re.compile, regexps)
+        regexps = [re.compile(x) for x in regexps]
         matched_lines = []
         for line in lines:
             for regexp in regexps:
@@ -93,20 +100,24 @@ def get_text(html, filter_words, attributes):
         if no attribute was supplied then clean_attr assumes text
     '''
     if attributes:
-        attributes = filter(None, map(clean_attr, attributes))
+        attributes = [clean_attr(x) for x in attributes]
+        attributes = [x for x in attributes if x]
     else:
         attributes = ['text()']
 
     text = []
     for attr in attributes:
-        new_text = html.xpath('//*[not(self::script) and not(self::style)]/{0}'.format(attr))
+        new_text = html.xpath('//*[not(self::script) and \
+                              not(self::style)]/{0}'.format(attr))
 
         if filter_words:
             new_text = filter_re(new_text, filter_words)
 
         text += new_text
 
-    return [filter(lambda x: x in string.printable, line.strip()) + '\n' for line in text]
+    return [filter(lambda x: x in string.printable, line.strip()) + '\n'\
+            for line in text]
+
 
 
 def get_domain(url):
@@ -143,10 +154,10 @@ def clean_url(url, base_url):
     fragment = '{url.fragment}'.format(url=parsed_url)
     if fragment:
         url = url.split(fragment)[0]
-    
+
     ''' If no domain was found in url then add the base '''
     if not '{url.netloc}'.format(url=parsed_url):
-        url = urljoin(base_url, url) 
+        url = urljoin(base_url, url)
     return url.rstrip(string.punctuation)
 
 
