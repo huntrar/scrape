@@ -2,7 +2,7 @@
 
 ######################################################################
 #                                                                    #
-# scrape - a command-line web scraping, crawling and conversion tool #
+# scrape - a command-line web scraping tool                          #
 # written by Hunter Hammond (huntrar@gmail.com)                      #
 #                                                                    #
 ######################################################################
@@ -21,12 +21,11 @@ from . import __version__
 
 
 def get_parser():
-    parser = argp.ArgumentParser(description='a command-line web scraping, \
-                                                 crawling, and conversion tool')
+    parser = argp.ArgumentParser(description='a command-line web scraping tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='url(s) to scrape')
-    parser.add_argument('-r', '--read', type=str, nargs='*',
-                        help='read in local html file(s)')
+    parser.add_argument('-l', '--local', type=str, nargs='*',
+                        help='read in local html files')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
                         help='tag attribute(s) for extracting lines of text,'
                              'default is text')
@@ -38,8 +37,7 @@ def get_parser():
                         help='regexp(s) to filter lines of text')
     parser.add_argument('-ht', '--html', help='save output as html',
                         action='store_true')
-    parser.add_argument('-l', '--limit', type=int, help='set page crawling '
-                                                        'limit')
+    parser.add_argument('-m', '--max', type=int, help='max pages to crawl')
     parser.add_argument('-n', '--nonstrict', help='set crawler to visit other '
                                                   'websites',
                         action='store_true')
@@ -58,8 +56,8 @@ def crawl(args, base_url):
     ''' Url keywords for filtering crawled links '''
     url_keywords = args['crawl']
 
-    ''' The limit on number of pages to be crawled '''
-    limit = args['limit']
+    ''' The max number of pages to be crawled '''
+    limit = args['max']
 
     ''' If True the crawler may travel outside the seed url's domain '''
     nonstrict = args['nonstrict']
@@ -76,14 +74,12 @@ def crawl(args, base_url):
     crawled_links = set()
     uncrawled_links = OrderedSet()
 
-    html = utils.get_html(base_url)
-    if len(html) > 0:
-        ''' Convert html text to HtmlElement object '''
-        new_html = lh.fromstring(html)
-
+    raw_html = utils.get_html(base_url)
+    if raw_html:
+        html = lh.fromstring(raw_html)
         ''' Clean, filter, and update links '''
         links = [utils.clean_url(u, base_url) for u \
-                 in new_html.xpath('//a/@href')]
+                 in html.xpath('//a/@href')]
 
         ''' Domain may be restricted to the seed domain '''
         if not nonstrict:
@@ -101,7 +97,7 @@ def crawl(args, base_url):
         '''
         uncrawled_links.update(links)
         crawled_links.add(utils.remove_scheme(base_url))
-        utils.write_part_file(html, len(crawled_links))
+        utils.write_part_file(raw_html, len(crawled_links))
         if not quiet:
             print('Crawled {0} (#{1}).'.format(base_url, len(crawled_links)))
 
@@ -118,57 +114,58 @@ def crawl(args, base_url):
                 ''' Compare scheme-less urls to prevent http(s):// dupes '''
                 if utils.validate_url(url) and \
                    utils.remove_scheme(url) not in crawled_links:
-                    ''' Compute a hash of the page
-                        check if it is in the page cache
-                    '''
-                    html = utils.get_html(url)
-                    page_hash = utils.hash_text(html)
+                    raw_html = utils.get_raw_html(url)
+                    if raw_html:
+                        html = lh.fromstring(raw_html)
+                        ''' Compute a hash of the page
+                            Check if it is in the page cache
+                        '''
+                        page_text = utils.get_text(html)
+                        page_hash = utils.hash_text(''.join(page_text))
 
-                    if page_hash not in page_cache:
+                        ''' Ignore page if found in cache, otherwise add it '''
+                        if page_hash in page_cache:
+                            continue
                         utils.cache_page(page_cache, page_hash)
 
-                        if len(html) > 0:
-                            ''' Convert html text to HtmlElement object '''
-                            new_html = lh.fromstring(html)
+                        ''' Generate and clean new links '''
+                        links = [utils.clean_url(u, base_url) for u in \
+                                 html.xpath('//a/@href')]
 
-                            ''' Generate and clean new links '''
-                            links = [utils.clean_url(u, base_url) for u in \
-                                     new_html.xpath('//a/@href')]
+                        ''' Links may have keywords to follow them by '''
+                        if url_keywords:
+                            for keyword in url_keywords:
+                                links = utils.filter_re(links, keyword)
 
-                            ''' Links may have keywords to follow them by '''
-                            if url_keywords:
-                                for keyword in url_keywords:
-                                    links = utils.filter_re(links, keyword)
+                        ''' Domain may be restricted to the seed domain '''
+                        if not nonstrict:
+                            if domain in url:
+                                links = [x for x in links if domain in x]
 
-                            ''' Domain may be restricted to the seed domain '''
-                            if not nonstrict:
-                                if domain in url:
-                                    links = [x for x in links if domain in x]
-
-                                    ''' Update uncrawled links with new links
-                                        add scheme-less url to crawled links
-                                        write_part_file creates a temporary
-                                        PART.html file to be processed in
-                                        write_pages
-                                    '''
-                                    uncrawled_links.update(links)
-                                    crawled_links.add(utils.remove_scheme(url))
-                                    utils.write_part_file(html, \
-                                                          len(crawled_links))
-                                    if not quiet:
-                                        print('Crawled {0} (#{1}).\
-                                              '.format(url, len(crawled_links)))
-                            else:
+                                ''' Update uncrawled links with new links
+                                    add scheme-less url to crawled links
+                                    write_part_file creates a temporary
+                                    PART.html file to be processed in
+                                    write_pages
+                                '''
                                 uncrawled_links.update(links)
                                 crawled_links.add(utils.remove_scheme(url))
-                                utils.write_part_file(html, len(crawled_links))
+                                utils.write_part_file(raw_html, \
+                                                      len(crawled_links))
                                 if not quiet:
                                     print('Crawled {0} (#{1}).\
                                           '.format(url, len(crawled_links)))
                         else:
+                            uncrawled_links.update(links)
+                            crawled_links.add(utils.remove_scheme(url))
+                            utils.write_part_file(raw_html, len(crawled_links))
                             if not quiet:
-                                sys.stderr.write('Failed to parse {0}.\n\
-                                                 '.format(url))
+                                print('Crawled {0} (#{1}).\
+                                      '.format(url, len(crawled_links)))
+                    else:
+                        if not quiet:
+                            sys.stderr.write('Failed to parse {0}.\n\
+                                             '.format(url))
 
         except KeyboardInterrupt:
             pass
@@ -202,12 +199,12 @@ def write_pages(args, pages, file_name):
         if quiet:
             options['quiet'] = None
         else:
-            if not args['read']:
+            if not args['local']:
                 print('Attempting to write {0} page(s) to {1}.\
                       '.format(len(pages), file_name))
 
         ''' Reads PART.html or user-inputted html files '''
-        if args['read']:
+        if args['local']:
             ''' Pages are user-inputted html files '''
             html_files = pages
         else:
@@ -215,7 +212,7 @@ def write_pages(args, pages, file_name):
 
         ''' Attempt conversion to PDF '''
         try:
-            if args['read']:
+            if args['local']:
                 for i, file in enumerate(html_files):
                     if not quiet:
                         print('Attempting to write to {0}.\
@@ -224,14 +221,14 @@ def write_pages(args, pages, file_name):
             else:
                 pk.from_file(html_files, file_name, options=options)
         except (KeyboardInterrupt, Exception) as err:
-            if not args['read']:
+            if not args['local']:
                 ''' Remove PART.html files '''
                 utils.clear_part_files()
 
             if not quiet:
                 print(str(err))
     else:
-        if args['read'] and isinstance(file_name, list):
+        if args['local'] and isinstance(file_name, list):
             file_names = [x + '.txt' for x in file_name]
             for file in file_names:
                 utils.clear_file(file)
@@ -244,7 +241,7 @@ def write_pages(args, pages, file_name):
                       '.format(len(pages), file_name))
 
         ''' Reads PART.html or user-inputted html files '''
-        if args['read']:
+        if args['local']:
             html_files = utils.read_files(pages)
         else:
             html_files = utils.read_part_files(len(pages))
@@ -253,14 +250,14 @@ def write_pages(args, pages, file_name):
             ''' Convert html text to lxml.html.HtmlElement object '''
             html = lh.fromstring(html)
 
-            if len(html) > 0:
+            if html is not None:
                 ''' Parse each page's html with lxml.html.HtmlElement object
                     and get non-script text
                 '''
                 text = utils.get_text(html, args['filter'], args['attributes'])
 
                 if text:
-                    if args['read']:
+                    if args['local']:
                         if not quiet:
                             print('Attempting to write to {0}.\
                                   '.format(file_names[i]))
@@ -269,7 +266,7 @@ def write_pages(args, pages, file_name):
                         utils.write_file(text, file_name)
             else:
                 if not quiet:
-                    if args['read']:
+                    if args['local']:
                         sys.stderr.write('Failed to parse file {0}.\n\
                                          '.format(file_names[i].replace(\
                                          '.txt', '.html')))
@@ -277,7 +274,7 @@ def write_pages(args, pages, file_name):
                         sys.stderr.write('Failed to parse part file {0}.\n\
                                          '.format(i+1))
 
-    if not args['read']:
+    if not args['local']:
         ''' Remove PART.html files '''
         utils.clear_part_files()
 
@@ -287,10 +284,10 @@ def scrape(args):
         base_dir = os.getcwd()
 
         ''' Read in local files '''
-        if args['read']:
+        if args['local']:
             pages = []
             out_files = []
-            for file in args['read']:
+            for file in args['local']:
                 if os.path.isfile(file):
                     ''' Write pages to text or pdf '''
                     ''' The proper extension will be added in write_pages '''
@@ -329,7 +326,7 @@ def scrape(args):
                     pages = crawl(args, url)
                 else:
                     pages = [url]
-                    utils.write_part_file(utils.get_html(url), len(pages))
+                    utils.write_part_file(utils.get_raw_html(url), len(pages))
 
                 if args['html']:
                     ''' Return to base directory '''
@@ -346,7 +343,6 @@ def scrape(args):
         else:
             ''' Remove PART.html files '''
             utils.clear_part_files()
-
         raise err
 
 
@@ -363,7 +359,7 @@ def command_line_runner():
             print('Saving output as text by default. Specify an output type '
                   'or use --quiet to silence this message.\n')
 
-    if not args['urls'] and not args['read']:
+    if not args['urls'] and not args['local']:
         parser.print_help()
     else:
         scrape(args)

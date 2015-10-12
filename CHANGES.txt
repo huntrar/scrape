@@ -1,3 +1,11 @@
+0.3.7
+------
+
+ - fixes to page caching and writing PART files
+ - use --local to read in local html files
+ - use --max to indicate max number of pages to crawl
+ - changed program description and keywords
+
 0.3.6
 ------
 

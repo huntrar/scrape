@@ -56,6 +56,18 @@ def get_html(url):
         return None
 
 
+def get_raw_html(url):
+    try:
+        ''' Get HTML response as a string object '''
+        headers = {'User-Agent': random.choice(USER_AGENTS)}
+        request = requests.get(url, headers=headers, proxies=get_proxies())
+        return request.text.encode('utf-8')
+    except Exception as err:
+        sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
+        sys.stderr.write('{0}\n'.format(str(err)))
+        return None
+
+
 def hash_text(text):
     md5 = hashlib.md5()
     md5.update(text)
@@ -95,7 +107,7 @@ def clean_attr(attr):
     return None
 
 
-def get_text(html, filter_words, attributes):
+def get_text(html, filter_words=None, attributes=None):
     ''' attributes is the tag attribute(s) to extract from the page
         if no attribute was supplied then clean_attr assumes text
     '''
