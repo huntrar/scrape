@@ -1,8 +1,8 @@
 # scrape [![Build Status](https://travis-ci.org/huntrar/scrape.svg?branch=master)](https://travis-ci.org/huntrar/scrape) [![PyPI](https://img.shields.io/pypi/dm/scrape.svg?style=flat)]()
 
-## a command-line web scraping, crawling, and conversion tool
+## a command-line web scraping tool
 
-scrape is a command-line tool used to extract, filter, and convert webpages to text, PDF, or HTML files. A link-crawling mechanism allows scrape to traverse websites following regexp statements or instead run freely. Any HTML attribute may be extracted; entering 'text' would extract plaintext, and 'href' would extract all links. Users may also choose to enter local HTML files to filter or convert.
+scrape can extract, filter, and convert webpages to various file formats (txt, pdf, or html). The link crawling mechanism can traverse websites using regular expression keywords. Users may also choose to enter local files to filter and/or convert file format.
 
 ## Installation
     pip install scrape
@@ -20,23 +20,23 @@ or
 You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF) to save files to pdf.
 
 ## Usage
-    usage: scrape.py [-h] [-r [READ [READ ...]]]
+    usage: scrape.py [-h] [-l [LOCAL [LOCAL ...]]]
                      [-a [ATTRIBUTES [ATTRIBUTES ...]]] [-c [CRAWL [CRAWL ...]]]
-                     [-ca] [-f [FILTER [FILTER ...]]] [-ht] [-l LIMIT] [-n] [-p]
+                     [-ca] [-f [FILTER [FILTER ...]]] [-ht] [-m MAX] [-n] [-p]
                      [-q] [-t] [-v]
                      [urls [urls ...]]
     
-    a command-line web scraping, crawling, and conversion tool
+    a command-line web scraping tool
     
     positional arguments:
       urls                  url(s) to scrape
     
     optional arguments:
       -h, --help            show this help message and exit
-      -r [READ [READ ...]], --read [READ [READ ...]]
-                            read in local html file(s)
+      -l [LOCAL [LOCAL ...]], --local [LOCAL [LOCAL ...]]
+                            read in local html files
       -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
-                            tag attribute(s) for extracting lines of text, default
+                            tag attribute(s) for extracting lines of text,default
                             is text
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
                             regexp(s) to match links to crawl
@@ -44,8 +44,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
                             regexp(s) to filter lines of text
       -ht, --html           save output as html
-      -l LIMIT, --limit LIMIT
-                            set page crawling limit
+      -m MAX, --max MAX     max pages to crawl
       -n, --nonstrict       set crawler to visit other websites
       -p, --pdf             save output as pdf
       -q, --quiet           suppress output
@@ -58,11 +57,11 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Notes
 * Supports both Python 2.x and Python 3.x.
 * Pages are converted to text by default, you can specify --html or --pdf to save to a different format.
-* Use the --read flag to read in local HTML files and extract, filter, or convert their contents.
+* Use the --local flag to read in local HTML files instead of inputting a URL.
 * Filtering text is done by entering one or more regexps to --filter.
 * You may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
 * Pages are saved temporarily as PART(%d).html files during processing and are removed automatically upon format conversion or unexpected exit.
 * Entire websites can be downloaded by using the --crawl-all flag or by passing one or more regexps to --crawl, which filters a list of URL's.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
-* Crawling can be stopped by Ctrl-C or by setting the number of pages to be crawled using --limit.
+* Crawling can be stopped by Ctrl-C or by setting the number of pages to be crawled using --max.
 
