@@ -85,11 +85,11 @@ def crawl(args, base_url):
     ''' A count for the number of crawled pages '''
     page_ct = 0
 
-    raw_html = utils.get_html(base_url)
-    if raw_html:
+    raw_html = utils.get_raw_html(base_url)
+    if raw_html is not None:
         html = lh.fromstring(raw_html)
 
-        ''' Clean, filter, and update links '''
+        ''' Remove URL fragments and append base url if domain is missing '''
         links = [utils.clean_url(u, base_url) for u \
                  in html.xpath('//a/@href')]
         page_ct += 1
@@ -130,10 +130,10 @@ def crawl(args, base_url):
                 url = uncrawled_links.pop(last=False)
 
                 ''' Compare scheme-less URLs to prevent http(s):// dupes '''
-                if utils.validate_url(url) and \
+                if utils.check_scheme(url) and \
                    utils.remove_scheme(url) not in crawled_links:
                     raw_html = utils.get_raw_html(url)
-                    if raw_html:
+                    if raw_html is not None:
                         html = lh.fromstring(raw_html)
                         ''' Compute a hash of the page
                             Check if it is in the page cache
@@ -318,6 +318,10 @@ def scrape(args):
                     also rstrips /
                 '''
                 url = utils.resolve_url(arg_url)
+
+                ''' Add scheme if none found '''
+                if not utils.check_scheme(url):
+                    url = utils.add_scheme(url)
 
                 ''' Construct the output file name from partial domain
                     and end of path

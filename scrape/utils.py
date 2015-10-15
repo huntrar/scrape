@@ -157,17 +157,29 @@ def get_out_file(url, domain=None):
         return domain
 
 
+def add_scheme(url):
+    return 'http://{0}'.format(url)
+
+
 def remove_scheme(url):
     return url.replace('http://', '').replace('https://', '')
 
 
+def check_scheme(url):
+    if url and (url.startswith('http://') or url.startswith('https://')):
+        return True
+    return False
+
+
 def clean_url(url, base_url):
     parsed_url = urlparse(url)
+
+    ''' Remove URL fragments '''
     fragment = '{url.fragment}'.format(url=parsed_url)
     if fragment:
         url = url.split(fragment)[0]
 
-    ''' If no domain was found in url then add the base '''
+    ''' If no domain was found in URL then add the base URL to it '''
     if not '{url.netloc}'.format(url=parsed_url):
         url = urljoin(base_url, url)
     return url.rstrip(string.punctuation)
@@ -177,12 +189,6 @@ def resolve_url(url):
     if '.' not in url:
         url = url + '.com'
     return url.rstrip('/')
-
-
-def validate_url(url):
-    if url and (url.startswith('http://') or url.startswith('https://')):
-        return True
-    return False
 
 
 def clear_file(file_name):
