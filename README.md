@@ -2,7 +2,7 @@
 
 ## a command-line web scraping tool
 
-scrape can extract, filter, and convert webpages to various file formats (txt, pdf, or html). The link crawling mechanism can traverse websites using regular expression keywords. Users may also choose to enter local files to filter and/or convert file format.
+scrape can extract, filter, and convert webpages to text, pdf, or HTML files. A link crawler can traverse websites using regular expression keywords. Users may also choose to enter local files to filter and/or convert.
 
 ## Installation
     pip install scrape
@@ -22,33 +22,35 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Usage
     usage: scrape.py [-h] [-l [LOCAL [LOCAL ...]]]
                      [-a [ATTRIBUTES [ATTRIBUTES ...]]] [-c [CRAWL [CRAWL ...]]]
-                     [-ca] [-f [FILTER [FILTER ...]]] [-ht] [-m MAX] [-n] [-p]
-                     [-q] [-t] [-v]
+                     [-ca] [-f [FILTER [FILTER ...]]] [-ht] [-mp MAXPAGES]
+                     [-ml MAXLINKS] [-n] [-p] [-q] [-t] [-v]
                      [urls [urls ...]]
     
     a command-line web scraping tool
     
     positional arguments:
-      urls                  url(s) to scrape
+      urls                  urls to scrape
     
     optional arguments:
       -h, --help            show this help message and exit
       -l [LOCAL [LOCAL ...]], --local [LOCAL [LOCAL ...]]
-                            read in local html files
+                            read in HTML files
       -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
-                            tag attribute(s) for extracting lines of text,default
-                            is text
+                            extract text using tag attributes
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
-                            regexp(s) to match links to crawl
-      -ca, --crawl-all      crawl all links
+                            regexp rules for following new pages
+      -ca, --crawl-all      crawl all pages
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
-                            regexp(s) to filter lines of text
-      -ht, --html           save output as html
-      -m MAX, --max MAX     max pages to crawl
-      -n, --nonstrict       set crawler to visit other websites
-      -p, --pdf             save output as pdf
-      -q, --quiet           suppress output
-      -t, --text            save output as text, default
+                            regexp rules for filtering text
+      -ht, --html           write pages as HTML
+      -mp MAXPAGES, --maxpages MAXPAGES
+                            max number of pages to crawl
+      -ml MAXLINKS, --maxlinks MAXLINKS
+                            max number of links to scrape
+      -n, --nonstrict       allow crawler to visit any domain
+      -p, --pdf             write pages as pdf
+      -q, --quiet           suppress program output
+      -t, --text            write pages as text (default)
       -v, --version         display current version
 
 ## Author
@@ -57,11 +59,10 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Notes
 * Supports both Python 2.x and Python 3.x.
 * Pages are converted to text by default, you can specify --html or --pdf to save to a different format.
-* Use the --local flag to read in local HTML files instead of inputting a URL.
+* Use the --local flag to read in local HTML files instead of entering a URL.
 * Filtering text is done by entering one or more regexps to --filter.
 * You may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
-* Pages are saved temporarily as PART(%d).html files during processing and are removed automatically upon format conversion or unexpected exit.
-* Entire websites can be downloaded by using the --crawl-all flag or by passing one or more regexps to --crawl, which filters a list of URL's.
+* Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
+* To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
-* Crawling can be stopped by Ctrl-C or by setting the number of pages to be crawled using --max.
-
+* Crawling can be stopped by Ctrl-C or alternatively by setting the number of pages or links to be crawled using --maxpages and --maxlinks. A page may contain zero or many links to more pages.

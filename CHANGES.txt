@@ -1,3 +1,12 @@
+0.3.8
+------
+
+ - made distinction between links and pages with multiple links on them
+ - use --maxpages to set the maximum number of pages to get links from
+ - use --maxlinks to set the maximum number of links to parse
+ - improved the argument help messages
+ - improved notes/description in README
+
 0.3.7
 ------
 

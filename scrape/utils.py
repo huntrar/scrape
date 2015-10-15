@@ -29,7 +29,7 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
                'AppleWebKit/536.5 (KHTML, like Gecko) '
                'Chrome/19.0.1084.46 Safari/536.5')
 
-CACHE_SIZE = 10 # Number of pages to temporarily cache for preventing dupes
+CACHE_SIZE = 10 # Number of links to temporarily cache for preventing dupes
 
 
 def get_proxies():
@@ -74,10 +74,10 @@ def hash_text(text):
     return md5.hexdigest()
 
 
-def cache_page(page_cache, page_hash):
-    page_cache.append(page_hash)
-    if len(page_cache) > CACHE_SIZE:
-        page_cache.pop(0)
+def cache_link(link_cache, link_hash):
+    link_cache.append(link_hash)
+    if len(link_cache) > CACHE_SIZE:
+        link_cache.pop(0)
 
 
 def filter_re(lines, regexps):
