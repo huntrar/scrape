@@ -29,7 +29,7 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
                'AppleWebKit/536.5 (KHTML, like Gecko) '
                'Chrome/19.0.1084.46 Safari/536.5')
 
-CACHE_SIZE = 10 # Number of links to temporarily cache for preventing dupes
+CACHE_SIZE = 10  # Number of links to temporarily cache for preventing dupes
 
 
 def get_proxies():
@@ -127,9 +127,8 @@ def get_text(html, filter_words=None, attributes=None):
 
         text += new_text
 
-    return [filter(lambda x: x in string.printable, line.strip()) + '\n'\
+    return [filter(lambda x: x in string.printable, line.strip()) + '\n'
             for line in text]
-
 
 
 def get_domain(url):
@@ -263,5 +262,3 @@ def clear_part_files(num_parts=None):
     files = get_part_files(num_parts)
     for f_name in files:
         clear_file(f_name)
-
-

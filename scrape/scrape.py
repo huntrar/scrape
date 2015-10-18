@@ -21,7 +21,8 @@ from . import __version__
 
 
 def get_parser():
-    parser = argp.ArgumentParser(description='a command-line web scraping tool')
+    parser = argp.ArgumentParser(description='a command-line web scraping \
+                                             tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='URLs to scrape')
     parser.add_argument('-l', '--local', type=str, nargs='*',
@@ -90,7 +91,7 @@ def crawl(args, base_url):
         html = lh.fromstring(raw_html)
 
         ''' Remove URL fragments and append base url if domain is missing '''
-        links = [utils.clean_url(u, base_url) for u \
+        links = [utils.clean_url(u, base_url) for u
                  in html.xpath('//a/@href')]
         page_ct += 1
 
@@ -150,7 +151,7 @@ def crawl(args, base_url):
                         ''' Find and clean new links available on page
                             and add to the crawled pages count
                         '''
-                        links = [utils.clean_url(u, base_url) for u in \
+                        links = [utils.clean_url(u, base_url) for u in
                                  html.xpath('//a/@href')]
                         page_ct += 1
 
@@ -191,7 +192,15 @@ def write_pages(args, pages, file_name):
 
     quiet = args['quiet']
 
+    ''' Reads PART.html or user-inputted html files '''
+    if args['local']:
+        html_files = utils.read_files(pages)
+    else:
+        html_files = utils.read_part_files(len(pages))
+
     if args['pdf']:
+        ''' Write pages to pdf '''
+
         if isinstance(file_name, list):
             file_names = [x + '.pdf' for x in file_name]
             for f_name in file_names:
@@ -200,14 +209,12 @@ def write_pages(args, pages, file_name):
             file_name = file_name + '.pdf'
             utils.clear_file(file_name)
 
-        ''' Set pdfkit options
-            Only ignore errors if there is more than one page
-            This is to prevent an empty pdf being written
-            But if pages > 1 we don't want one failure to prevent
-            writing others
-        '''
+        ''' Set pdfkit options '''
         options = {}
 
+        ''' Only ignore errors if there is more than one page
+            This prevents an empty write if an error occurs
+        '''
         if len(pages) > 1:
             options['ignore-load-errors'] = None
 
@@ -218,14 +225,7 @@ def write_pages(args, pages, file_name):
                 print('Attempting to write {0} page(s) to {1}.\
                       '.format(len(pages), file_name))
 
-        ''' Reads PART.html or user-inputted html files '''
-        if args['local']:
-            ''' Pages are user-inputted html files '''
-            html_files = pages
-        else:
-            html_files = utils.read_part_files(len(pages))
-
-        ''' Attempt conversion to PDF '''
+        ''' Attempt conversion to pdf using pdfkit '''
         try:
             if args['local']:
                 for i, html_file in enumerate(html_files):
@@ -243,6 +243,8 @@ def write_pages(args, pages, file_name):
             if not quiet:
                 print(str(err))
     else:
+        ''' Write pages to text '''
+
         if args['local'] and isinstance(file_name, list):
             file_names = [x + '.txt' for x in file_name]
             for f_name in file_names:
@@ -255,20 +257,12 @@ def write_pages(args, pages, file_name):
                 print('Attempting to write {0} page(s) to {1}.\
                       '.format(len(pages), file_name))
 
-        ''' Reads PART.html or user-inputted html files '''
-        if args['local']:
-            html_files = utils.read_files(pages)
-        else:
-            html_files = utils.read_part_files(len(pages))
-
         for i, html in enumerate(html_files):
             ''' Convert html text to lxml.html.HtmlElement object '''
             html = lh.fromstring(html)
 
             if html is not None:
-                ''' Parse each page's html with lxml.html.HtmlElement object
-                    and get non-script text
-                '''
+                ''' Parse html with lxml and get non-script text '''
                 text = utils.get_text(html, args['filter'], args['attributes'])
 
                 if text:
@@ -283,7 +277,7 @@ def write_pages(args, pages, file_name):
                 if not quiet:
                     if args['local']:
                         sys.stderr.write('Failed to parse file {0}.\n\
-                                         '.format(file_names[i].replace(\
+                                         '.format(file_names[i].replace(
                                          '.txt', '.html')))
                     else:
                         sys.stderr.write('Failed to parse part file {0}.\n\
@@ -295,7 +289,7 @@ def write_pages(args, pages, file_name):
 
 
 def scrape(args):
-    ''' Extract, filter, and convert webpages to text, pdf, or HTML files ''' 
+    ''' Extract, filter, and convert webpages to text, pdf, or HTML files '''
 
     try:
         base_dir = os.getcwd()
@@ -382,7 +376,6 @@ def command_line_runner():
         parser.print_help()
     else:
         scrape(args)
-
 
 
 if __name__ == '__main__':
