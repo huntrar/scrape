@@ -216,8 +216,8 @@ def change_directory(dir_name):
 
 def get_num_parts():
     num_parts = 0
-    for file in os.listdir(os.getcwd()):
-        if 'PART' in file and file.endswith('.html'):
+    for f_name in os.listdir(os.getcwd()):
+        if 'PART' in f_name and f_name.endswith('.html'):
             num_parts += 1
     return num_parts
 
@@ -240,11 +240,11 @@ def get_part_files(num_parts=None):
 
 def read_files(files):
     if isinstance(files, list):
-        for file in files:
-            with open(file, 'r') as f:
+        for f_name in files:
+            with open(f_name, 'r') as f:
                 yield f.read()
     else:
-        with open(file, 'r') as f:
+        with open(files, 'r') as f:
             yield f.read()
 
 
@@ -254,14 +254,14 @@ def read_part_files(num_parts=None):
 
     files = get_part_files(num_parts)
 
-    for file in files:
-        with open(file, 'r') as f:
+    for f_name in files:
+        with open(f_name, 'r') as f:
             yield f.read()
 
 
 def clear_part_files(num_parts=None):
     files = get_part_files(num_parts)
-    for file in files:
-        clear_file(file)
+    for f_name in files:
+        clear_file(f_name)
 
 
