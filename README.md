@@ -20,21 +20,18 @@ or
 You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF) to save files to pdf.
 
 ## Usage
-    usage: scrape.py [-h] [-l [LOCAL [LOCAL ...]]]
-                     [-a [ATTRIBUTES [ATTRIBUTES ...]]] [-c [CRAWL [CRAWL ...]]]
-                     [-ca] [-f [FILTER [FILTER ...]]] [-ht] [-mp MAXPAGES]
-                     [-ml MAXLINKS] [-n] [-p] [-q] [-t] [-v]
+    usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
+                     [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
+                     [-ht] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-p] [-q] [-t] [-v]
                      [urls [urls ...]]
     
     a command-line web scraping tool
     
     positional arguments:
-      urls                  urls to scrape
+      urls                  URLs/files to scrape
     
     optional arguments:
       -h, --help            show this help message and exit
-      -l [LOCAL [LOCAL ...]], --local [LOCAL [LOCAL ...]]
-                            read in HTML files
       -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
                             extract text using tag attributes
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]

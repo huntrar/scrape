@@ -24,9 +24,7 @@ def get_parser():
     parser = argp.ArgumentParser(description='a command-line web scraping \
                                              tool')
     parser.add_argument('urls', type=str, nargs='*',
-                        help='URLs to scrape')
-    parser.add_argument('-l', '--local', type=str, nargs='*',
-                        help='read in HTML files')
+                        help='URLs/files to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
                         help='extract text using tag attributes')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
@@ -187,27 +185,32 @@ def crawl(args, base_url):
     return list(crawled_links)
 
 
-def write_pages(args, pages, file_name):
+def write_pages(args, pages, out_file_name):
     ''' Write scraped pages to text or pdf '''
 
     quiet = args['quiet']
 
-    ''' Reads PART.html or user-inputted html files '''
+    ''' Reads PART.html or user-inputted files '''
+    filtering_html = False
     if args['local']:
-        html_files = utils.read_files(pages)
+        ''' If user enters any HTML files then set filter for HTML '''
+        ''' Check whether user is filtering text or html '''
+        if any(['.html' in x for x in pages]):
+            filtering_html = True
+        in_files = utils.read_files(pages)
     else:
-        html_files = utils.read_part_files(len(pages))
+        in_files = utils.read_part_files(len(pages))
 
     if args['pdf']:
         ''' Write pages to pdf '''
 
-        if isinstance(file_name, list):
-            file_names = [x + '.pdf' for x in file_name]
-            for f_name in file_names:
+        if isinstance(out_file_name, list):
+            out_file_names = [x + '.pdf' for x in out_file_name]
+            for f_name in out_file_names:
                 utils.clear_file(f_name)
         else:
-            file_name = file_name + '.pdf'
-            utils.clear_file(file_name)
+            out_file_name = out_file_name + '.pdf'
+            utils.clear_file(out_file_name)
 
         ''' Set pdfkit options '''
         options = {}
@@ -223,18 +226,22 @@ def write_pages(args, pages, file_name):
         else:
             if not args['local']:
                 print('Attempting to write {0} page(s) to {1}.\
-                      '.format(len(pages), file_name))
+                      '.format(len(pages), out_file_name))
 
         ''' Attempt conversion to pdf using pdfkit '''
         try:
+            if not filtering_html:
+                sys.stderr.write('Only HTML can be converted to pdf.\n')
+                return
+
             if args['local']:
-                for i, html_file in enumerate(html_files):
+                for i, in_file in enumerate(in_files):
                     if not quiet:
                         print('Attempting to write to {0}.\
-                              '.format(file_names[i]))
-                    pk.from_file(html_file, file_names[i], options=options)
+                              '.format(out_file_names[i]))
+                    pk.from_file(in_file, out_file_names[i], options=options)
             else:
-                pk.from_file(html_files, file_name, options=options)
+                pk.from_file(in_files, out_file_name, options=options)
         except (KeyboardInterrupt, Exception) as err:
             if not args['local']:
                 ''' Remove PART.html files '''
@@ -245,43 +252,50 @@ def write_pages(args, pages, file_name):
     else:
         ''' Write pages to text '''
 
-        if args['local'] and isinstance(file_name, list):
-            file_names = [x + '.txt' for x in file_name]
-            for f_name in file_names:
-                utils.clear_file(f_name)
+        if args['local']:
+            ''' Write input files to multiple text files '''
+            out_file_names = [x + '.txt' for x in out_file_name]
         else:
-            file_name = file_name + '.txt'
-            utils.clear_file(file_name)
+            ''' Write PART files to a single text file '''
+            out_file_name = out_file_name + '.txt'
 
             if not quiet:
                 print('Attempting to write {0} page(s) to {1}.\
-                      '.format(len(pages), file_name))
+                      '.format(len(pages), out_file_name))
 
-        for i, html in enumerate(html_files):
-            ''' Convert html text to lxml.html.HtmlElement object '''
-            html = lh.fromstring(html)
+        for i, in_file in enumerate(in_files):
+            if filtering_html:
+                ''' Convert html text to lxml.html.HtmlElement object '''
+                html = lh.fromstring(in_file)
+                text = None
+            else:
+                html = None
+                text = in_file
 
             if html is not None:
-                ''' Parse html with lxml and get non-script text '''
                 text = utils.get_text(html, args['filter'], args['attributes'])
-
-                if text:
-                    if args['local']:
-                        if not quiet:
-                            print('Attempting to write to {0}.\
-                                  '.format(file_names[i]))
-                        utils.write_file(text, file_names[i])
-                    else:
-                        utils.write_file(text, file_name)
+            elif text is not None:
+                text = utils.get_text(text, args['filter'], filter_html=False)
             else:
                 if not quiet:
                     if args['local']:
                         sys.stderr.write('Failed to parse file {0}.\n\
-                                         '.format(file_names[i].replace(
+                                         '.format(out_file_names[i].replace(
                                          '.txt', '.html')))
                     else:
                         sys.stderr.write('Failed to parse part file {0}.\n\
                                          '.format(i+1))
+
+            if text:
+                if args['local']:
+                    if not quiet:
+                        print('Attempting to write to {0}.\
+                              '.format(out_file_names[i]))
+                    utils.clear_file(out_file_names[i])
+                    utils.write_file(text, out_file_names[i])
+                else:
+                    utils.clear_file(out_file_name)
+                    utils.write_file(text, out_file_name)
 
     if not args['local']:
         ''' Remove PART.html files '''
@@ -294,18 +308,26 @@ def scrape(args):
     try:
         base_dir = os.getcwd()
 
+        ''' Check if local files entered instead of URLs '''
+        args['local'] = None
+        for arg_url in args['urls']:
+            if os.path.isfile(arg_url):
+                args['local'] = args['urls']
+
         ''' Read in local files '''
         if args['local']:
             pages = []
             out_files = []
             for f_name in args['local']:
                 if os.path.isfile(f_name):
-                    ''' Write pages to text or pdf '''
                     ''' The proper extension will be added in write_pages '''
-                    out_files.append(f_name.rstrip('.html'))
+                    out_files.append('.'.join(f_name.split('.')[:-1]))
                     pages.append(f_name)
+                else:
+                    sys.stderr.write('{0} was not found.\n'.format(f_name))
+                    return False
             write_pages(args, pages, out_files)
-        elif args['urls']:
+        else:
             ''' Scrape URLs '''
             for arg_url in args['urls']:
                 ''' resolve_url appends .com if no extension found
@@ -372,7 +394,7 @@ def command_line_runner():
             print('Saving output as text by default. Specify an output type '
                   'or use --quiet to silence this message.\n')
 
-    if not args['urls'] and not args['local']:
+    if not args['urls']:
         parser.print_help()
     else:
         scrape(args)

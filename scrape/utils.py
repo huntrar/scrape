@@ -107,10 +107,7 @@ def clean_attr(attr):
     return None
 
 
-def get_text(html, filter_words=None, attributes=None):
-    ''' attributes is the tag attribute(s) to extract from the page
-        if no attribute was supplied then clean_attr assumes text
-    '''
+def get_text(html, filter_words=None, attributes=None, filter_html=True):
     if attributes:
         attributes = [clean_attr(x) for x in attributes]
         attributes = [x for x in attributes if x]
@@ -119,8 +116,11 @@ def get_text(html, filter_words=None, attributes=None):
 
     text = []
     for attr in attributes:
-        new_text = html.xpath('//*[not(self::script) and \
-                              not(self::style)]/{0}'.format(attr))
+        if filter_html:
+            new_text = html.xpath('//*[not(self::script) and \
+                                  not(self::style)]/{0}'.format(attr))
+        else:
+            new_text = html.split('\n')
 
         if filter_words:
             new_text = filter_re(new_text, filter_words)

@@ -1,3 +1,13 @@
+0.4.0
+------
+
+ - can now read in text and filter it
+ - recognizes local files, no need for user to enter special flag
+ - moved html/ files to testing/ and added a text file to it
+ - added better distinction between input and output files
+ - changed instances of file to f_name in utils
+ - pep8 reformatting
+
 0.3.9
 ------
 
