@@ -56,7 +56,6 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Notes
 * Supports both Python 2.x and Python 3.x.
 * Pages are converted to text by default, you can specify --html or --pdf to save to a different format.
-* Use the --local flag to read in local HTML files instead of entering a URL.
 * Filtering text is done by entering one or more regexps to --filter.
 * You may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
 * Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
