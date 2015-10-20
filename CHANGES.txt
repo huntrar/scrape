@@ -1,3 +1,8 @@
+0.4.2
+------
+
+ - removed read_part_files in place of get_part_files as pdfkit reads filenames
+
 0.4.1
 ------
 

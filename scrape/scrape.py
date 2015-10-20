@@ -201,7 +201,7 @@ def write_pages(args, pages, out_file_name):
     else:
         ''' Scraped URLs are downloaded as HTML files '''
         filtering_html = True
-        in_files = utils.read_part_files(len(pages))
+        in_files = utils.get_part_files(len(pages))
 
     if args['pdf']:
         ''' Write pages to pdf '''
@@ -248,9 +248,7 @@ def write_pages(args, pages, out_file_name):
             if not args['local']:
                 ''' Remove PART.html files '''
                 utils.clear_part_files()
-
-            if not quiet:
-                print(str(err))
+            raise err
     else:
         ''' Write pages to text '''
 

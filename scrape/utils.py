@@ -247,17 +247,6 @@ def read_files(files):
             yield f.read()
 
 
-def read_part_files(num_parts=None):
-    if num_parts is None:
-        num_parts = get_num_parts()
-
-    files = get_part_files(num_parts)
-
-    for f_name in files:
-        with open(f_name, 'r') as f:
-            yield f.read()
-
-
 def clear_part_files(num_parts=None):
     files = get_part_files(num_parts)
     for f_name in files:
