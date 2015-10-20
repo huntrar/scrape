@@ -199,6 +199,8 @@ def write_pages(args, pages, out_file_name):
             filtering_html = True
         in_files = utils.read_files(pages)
     else:
+        ''' Scraped URLs are downloaded as HTML files '''
+        filtering_html = True
         in_files = utils.read_part_files(len(pages))
 
     if args['pdf']:
