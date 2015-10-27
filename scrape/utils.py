@@ -139,6 +139,7 @@ def get_domain(url):
 
 
 def get_out_file(url, domain=None):
+    ''' Construct the output file name from partial domain and end of path '''
     if domain is None:
         domain = get_domain(url)
 
@@ -150,7 +151,7 @@ def get_out_file(url, domain=None):
 
     if tail_url:
         if '/' in tail_url:
-            tail_url = tail_url.split('/')[-1]
+            tail_url = [x for x in tail_url.split('/') if x][-1]
         return domain + '-' + tail_url
     else:
         return domain

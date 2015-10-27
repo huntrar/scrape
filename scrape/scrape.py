@@ -320,7 +320,7 @@ def scrape(args):
             out_files = []
             for f_name in args['local']:
                 if os.path.isfile(f_name):
-                    ''' The proper extension will be added in write_pages '''
+                    ''' The proper file extension is added in write_pages '''
                     out_files.append('.'.join(f_name.split('.')[:-1]))
                     pages.append(f_name)
                 else:
@@ -335,22 +335,18 @@ def scrape(args):
                 '''
                 url = utils.resolve_url(arg_url)
 
-                ''' Add scheme if none found '''
+                ''' Add http:// scheme if none found '''
                 if not utils.check_scheme(url):
                     url = utils.add_scheme(url)
 
-                ''' Construct the output file name from partial domain
-                    and end of path
-                    The proper extension will be added in write_pages
-                '''
                 domain = utils.get_domain(url)
                 args['domain'] = domain
 
                 if args['html']:
                     ''' Keep all scraped .html files and place them in a
-                        domain subdirectory
+                        subdirectory named after the domain
                         change_directory creates the directory if
-                        it doesn't exist and calls chdir
+                        it doesn't exist and calls chdir()
                     '''
                     utils.change_directory(domain)
                     if not args['quiet']:
@@ -364,10 +360,11 @@ def scrape(args):
                     utils.write_part_file(utils.get_raw_html(url), len(pages))
 
                 if args['html']:
-                    ''' Return to base directory '''
+                    ''' Return to base directory, files have been written '''
                     os.chdir(base_dir)
                 else:
                     ''' Write pages to text or pdf '''
+                    ''' The proper file extension is added in write_pages '''
                     out_file = utils.get_out_file(url, domain)
                     write_pages(args, pages, out_file)
 
