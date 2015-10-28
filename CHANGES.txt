@@ -2,6 +2,7 @@
 ------
 
  - fixed out_file naming
+ - pep8 and pylint reformatting
 
 0.4.2
 ------

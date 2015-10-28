@@ -21,8 +21,8 @@ from . import __version__
 
 
 def get_parser():
-    parser = argp.ArgumentParser(description='a command-line web scraping \
-                                             tool')
+    parser = argp.ArgumentParser(
+        description='a command-line web scraping tool')
     parser.add_argument('urls', type=str, nargs='*',
                         help='URLs/files to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
@@ -121,16 +121,16 @@ def crawl(args, base_url):
         try:
             while uncrawled_links:
                 ''' Check limit on number of links and pages to crawl '''
-                if (max_links and len(crawled_links) >= max_links) or \
-                   (max_pages and page_ct >= max_pages):
+                if ((max_links and len(crawled_links) >= max_links) or
+                        (max_pages and page_ct >= max_pages)):
                     break
 
                 ''' Find the next uncrawled link and crawl it '''
                 url = uncrawled_links.pop(last=False)
 
                 ''' Compare scheme-less URLs to prevent http(s):// dupes '''
-                if utils.check_scheme(url) and \
-                   utils.remove_scheme(url) not in crawled_links:
+                if (utils.check_scheme(url) and
+                        utils.remove_scheme(url) not in crawled_links):
                     raw_html = utils.get_raw_html(url)
                     if raw_html is not None:
                         html = lh.fromstring(raw_html)
@@ -173,12 +173,12 @@ def crawl(args, base_url):
                         crawled_links.add(utils.remove_scheme(url))
                         utils.write_part_file(raw_html, len(crawled_links))
                         if not quiet:
-                            print('Crawled {0} (#{1}).\
-                                  '.format(url, len(crawled_links)))
+                            print('Crawled {0} (#{1}).'
+                                  .format(url, len(crawled_links)))
                     else:
                         if not quiet:
-                            sys.stderr.write('Failed to parse {0}.\n\
-                                             '.format(url))
+                            sys.stderr.write('Failed to parse {0}.\n'
+                                             .format(url))
         except KeyboardInterrupt:
             pass
 
@@ -227,8 +227,8 @@ def write_pages(args, pages, out_file_name):
             options['quiet'] = None
         else:
             if not args['local']:
-                print('Attempting to write {0} page(s) to {1}.\
-                      '.format(len(pages), out_file_name))
+                print('Attempting to write {0} page(s) to {1}.'
+                      .format(len(pages), out_file_name))
 
         ''' Attempt conversion to pdf using pdfkit '''
         try:
@@ -239,8 +239,8 @@ def write_pages(args, pages, out_file_name):
             if args['local']:
                 for i, in_file in enumerate(in_files):
                     if not quiet:
-                        print('Attempting to write to {0}.\
-                              '.format(out_file_names[i]))
+                        print('Attempting to write to {0}.'
+                              .format(out_file_names[i]))
                     pk.from_file(in_file, out_file_names[i], options=options)
             else:
                 pk.from_file(in_files, out_file_name, options=options)
@@ -260,8 +260,8 @@ def write_pages(args, pages, out_file_name):
             out_file_name = out_file_name + '.txt'
 
             if not quiet:
-                print('Attempting to write {0} page(s) to {1}.\
-                      '.format(len(pages), out_file_name))
+                print('Attempting to write {0} page(s) to {1}.'
+                      .format(len(pages), out_file_name))
 
         for i, in_file in enumerate(in_files):
             if filtering_html:
@@ -279,18 +279,18 @@ def write_pages(args, pages, out_file_name):
             else:
                 if not quiet:
                     if args['local']:
-                        sys.stderr.write('Failed to parse file {0}.\n\
-                                         '.format(out_file_names[i].replace(
-                                         '.txt', '.html')))
+                        sys.stderr.write('Failed to parse file {0}.\n'
+                                         .format(out_file_names[i].replace(
+                                             '.txt', '.html')))
                     else:
-                        sys.stderr.write('Failed to parse part file {0}.\n\
-                                         '.format(i+1))
+                        sys.stderr.write('Failed to parse part file {0}.\n'
+                                         .format(i+1))
 
             if text:
                 if args['local']:
                     if not quiet:
-                        print('Attempting to write to {0}.\
-                              '.format(out_file_names[i]))
+                        print('Attempting to write to {0}.'
+                              .format(out_file_names[i]))
                     utils.clear_file(out_file_names[i])
                     utils.write_file(text, out_file_names[i])
                 else:

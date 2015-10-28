@@ -127,7 +127,7 @@ def get_text(html, filter_words=None, attributes=None, filter_html=True):
 
         text += new_text
 
-    return [filter(lambda x: x in string.printable, line.strip()) + '\n'
+    return [''.join(x for x in line.strip() if x in string.printable) + '\n'
             for line in text]
 
 
