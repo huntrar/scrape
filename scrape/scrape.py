@@ -20,6 +20,14 @@ from scrape import utils
 from . import __version__
 
 
+SYS_VERSION = sys.version_info[0]
+if SYS_VERSION == 2:
+    try:
+        input = raw_input
+    except NameError:
+        pass
+
+
 def get_parser():
     parser = argp.ArgumentParser(
         description='a command-line web scraping tool')
@@ -52,37 +60,88 @@ def get_parser():
     return parser
 
 
-def crawl(args, base_url):
-    ''' Find links given a seed URL and follow them '''
-
-    ''' Url keywords for filtering crawled links '''
-    url_keywords = args['crawl']
-
-    ''' The max number of pages to be crawled
-        A page may contain zero or more links
+def follow_links(args, uncrawled_links, crawled_links, base_url):
+    ''' Follow links found in base URL
+        Create a link cache, limit defined in cache_link in utils.py
     '''
-    max_pages = args['maxpages']
+    link_cache = []
 
-    ''' The max number of links to be scraped '''
-    max_links = args['maxlinks']
+    ''' A count for the number of crawled pages '''
+    page_ct = 1
 
-    ''' If True the crawler may travel outside the seed URL's domain '''
-    nonstrict = args['nonstrict']
+    try:
+        while uncrawled_links:
+            ''' Check limit on number of links and pages to crawl '''
+            if ((args['maxlinks'] and
+                 len(crawled_links) >= args['maxlinks']) or
+                    (args['maxpages'] and page_ct >= args['maxpages'])):
+                break
 
-    ''' Domain of the seed url '''
-    domain = args['domain']
+            ''' Find the next uncrawled link and crawl it '''
+            url = uncrawled_links.pop(last=False)
 
-    ''' If True then output is silenced '''
-    quiet = args['quiet']
+            ''' Compare scheme-less URLs to prevent http(s):// dupes '''
+            if (utils.check_scheme(url) and
+                    utils.remove_scheme(url) not in crawled_links):
+                raw_html = utils.get_raw_html(url)
+                if raw_html is not None:
+                    html = lh.fromstring(raw_html)
+                    ''' Compute a hash of the page
+                        Check if it is in the page cache
+                    '''
+                    page_text = utils.get_text(html)
+                    link_hash = utils.hash_text(''.join(page_text))
+
+                    ''' Ignore page if found in cache, otherwise add it '''
+                    if link_hash in link_cache:
+                        continue
+
+                    utils.cache_link(link_cache, link_hash)
+
+                    ''' Find and clean new links available on page
+                        and add to the crawled pages count
+                    '''
+                    links = [utils.clean_url(u, base_url) for u in
+                             html.xpath('//a/@href')]
+                    page_ct += 1
+
+                    ''' Check for keywords to follow links by '''
+                    if args['crawl']:
+                        for keyword in args['crawl']:
+                            links = utils.filter_re(links, keyword)
+
+                    ''' Domain may be restricted to the seed domain '''
+                    if not args['nonstrict'] and args['domain'] in url:
+                        links = [x for x in links if args['domain'] in x]
+
+                    ''' Update uncrawled links with new links
+                        add scheme-less URL to crawled links
+                        write_part_file creates a temporary
+                        PART.html file to be processed in
+                        write_pages
+                    '''
+                    uncrawled_links.update(links)
+                    crawled_links.add(utils.remove_scheme(url))
+                    utils.write_part_file(raw_html, len(crawled_links))
+                    if not args['quiet']:
+                        print('Crawled {0} (#{1}).'
+                              .format(url, len(crawled_links)))
+                else:
+                    if not args['quiet']:
+                        sys.stderr.write('Failed to parse {0}.\n'
+                                         .format(url))
+    except KeyboardInterrupt:
+        pass
+
+
+def crawl(args, base_url):
+    ''' Find links given a seed URL and follow them breadth-first '''
 
     ''' crawled_links holds already crawled URLs
         uncrawled_links holds URLs to pop off from as a stack
     '''
     crawled_links = set()
     uncrawled_links = OrderedSet()
-
-    ''' A count for the number of crawled pages '''
-    page_ct = 0
 
     raw_html = utils.get_raw_html(base_url)
     if raw_html is not None:
@@ -91,15 +150,14 @@ def crawl(args, base_url):
         ''' Remove URL fragments and append base url if domain is missing '''
         links = [utils.clean_url(u, base_url) for u
                  in html.xpath('//a/@href')]
-        page_ct += 1
 
         ''' Domain may be restricted to the seed domain '''
-        if not nonstrict:
-            links = [x for x in links if domain in x]
+        if not args['nonstrict']:
+            links = [x for x in links if args['domain'] in x]
 
         ''' Links may have keywords to follow them by '''
-        if url_keywords:
-            for keyword in url_keywords:
+        if args['crawl']:
+            for keyword in args['crawl']:
                 links = [x for x in links if keyword in x]
 
         ''' Update uncrawled links with new links
@@ -110,92 +168,125 @@ def crawl(args, base_url):
         uncrawled_links.update(links)
         crawled_links.add(utils.remove_scheme(base_url))
         utils.write_part_file(raw_html, len(crawled_links))
-        if not quiet:
+        if not args['quiet']:
             print('Crawled {0} (#{1}).'.format(base_url, len(crawled_links)))
 
-        ''' Follow links found in base URL
-            Create a link cache, limit defined in cache_link in utils.py
-        '''
-        link_cache = []
-
-        try:
-            while uncrawled_links:
-                ''' Check limit on number of links and pages to crawl '''
-                if ((max_links and len(crawled_links) >= max_links) or
-                        (max_pages and page_ct >= max_pages)):
-                    break
-
-                ''' Find the next uncrawled link and crawl it '''
-                url = uncrawled_links.pop(last=False)
-
-                ''' Compare scheme-less URLs to prevent http(s):// dupes '''
-                if (utils.check_scheme(url) and
-                        utils.remove_scheme(url) not in crawled_links):
-                    raw_html = utils.get_raw_html(url)
-                    if raw_html is not None:
-                        html = lh.fromstring(raw_html)
-                        ''' Compute a hash of the page
-                            Check if it is in the page cache
-                        '''
-                        page_text = utils.get_text(html)
-                        link_hash = utils.hash_text(''.join(page_text))
-
-                        ''' Ignore page if found in cache, otherwise add it '''
-                        if link_hash in link_cache:
-                            continue
-
-                        utils.cache_link(link_cache, link_hash)
-
-                        ''' Find and clean new links available on page
-                            and add to the crawled pages count
-                        '''
-                        links = [utils.clean_url(u, base_url) for u in
-                                 html.xpath('//a/@href')]
-                        page_ct += 1
-
-                        ''' Check for keywords to follow links by '''
-                        if url_keywords:
-                            for keyword in url_keywords:
-                                links = utils.filter_re(links, keyword)
-
-                        ''' Domain may be restricted to the seed domain '''
-                        if not nonstrict:
-                            if domain in url:
-                                links = [x for x in links if domain in x]
-
-                        ''' Update uncrawled links with new links
-                            add scheme-less URL to crawled links
-                            write_part_file creates a temporary
-                            PART.html file to be processed in
-                            write_pages
-                        '''
-                        uncrawled_links.update(links)
-                        crawled_links.add(utils.remove_scheme(url))
-                        utils.write_part_file(raw_html, len(crawled_links))
-                        if not quiet:
-                            print('Crawled {0} (#{1}).'
-                                  .format(url, len(crawled_links)))
-                    else:
-                        if not quiet:
-                            sys.stderr.write('Failed to parse {0}.\n'
-                                             .format(url))
-        except KeyboardInterrupt:
-            pass
+        follow_links(args, uncrawled_links, crawled_links, base_url)
 
     return list(crawled_links)
 
 
+def pdfkit_convert(args, pages, in_files, out_file_names):
+    ''' Set pdfkit options '''
+    options = {}
+
+    ''' Only ignore errors if there is more than one page
+        This prevents an empty write if an error occurs
+    '''
+    if len(pages) > 1:
+        options['ignore-load-errors'] = None
+
+    if args['quiet']:
+        options['quiet'] = None
+    else:
+        if not args['local']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(pages), out_file_names[0]))
+
+    ''' Attempt conversion to pdf using pdfkit '''
+    try:
+        if args['local']:
+            for i, in_file in enumerate(in_files):
+                if not args['quiet']:
+                    print('Attempting to write to {0}.'
+                          .format(out_file_names[i]))
+                pk.from_file(in_file, out_file_names[i], options=options)
+        else:
+            pk.from_file(in_files, out_file_names[0], options=options)
+    except (KeyboardInterrupt, Exception) as err:
+        if not args['local']:
+            ''' Remove PART.html files '''
+            utils.clear_part_files()
+        raise err
+
+
+def write_to_pdf(args, pages, in_files, out_file_name, filtering_html):
+    ''' Write pages to pdf '''
+
+    if not filtering_html:
+        sys.stderr.write('Only HTML can be converted to pdf.\n')
+        return
+
+    if isinstance(out_file_name, list):
+        out_file_names = [x + '.pdf' for x in out_file_name]
+        for f_name in out_file_names:
+            utils.clear_file(f_name)
+        pdfkit_convert(args, pages, in_files, out_file_names)
+    else:
+        out_file_name = out_file_name + '.pdf'
+        utils.clear_file(out_file_name)
+        pdfkit_convert(args, pages, in_files, [out_file_name])
+
+
+def write_to_text(args, pages, in_files, out_file_name, filtering_html):
+    ''' Write pages to text '''
+
+    if args['local']:
+        ''' Write input files to multiple text files '''
+        out_file_names = [x + '.txt' for x in out_file_name]
+    else:
+        ''' Write PART files to a single text file '''
+        out_file_name = out_file_name + '.txt'
+
+        if not args['quiet']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(pages), out_file_name))
+
+    for i, in_file in enumerate(in_files):
+        if filtering_html:
+            ''' Convert html text to lxml.html.HtmlElement object '''
+            html = lh.fromstring(in_file)
+            text = None
+        else:
+            html = None
+            text = in_file
+
+        if html is not None:
+            text = utils.get_text(html, args['filter'], args['attributes'])
+        elif text is not None:
+            text = utils.get_text(text, args['filter'], filter_html=False)
+        else:
+            if not args['quiet']:
+                if args['local']:
+                    sys.stderr.write('Failed to parse file {0}.\n'
+                                     .format(out_file_names[i].replace(
+                                         '.txt', '.html')))
+                else:
+                    sys.stderr.write('Failed to parse part file {0}.\n'
+                                     .format(i+1))
+
+        if text:
+            if args['local']:
+                if not args['quiet']:
+                    print('Attempting to write to {0}.'
+                          .format(out_file_names[i]))
+                utils.clear_file(out_file_names[i])
+                utils.write_file(text, out_file_names[i])
+            else:
+                utils.clear_file(out_file_name)
+                utils.write_file(text, out_file_name)
+
+
 def write_pages(args, pages, out_file_name):
-    ''' Write scraped pages to text or pdf '''
-
-    quiet = args['quiet']
-
-    ''' Reads PART.html or user-inputted files '''
+    ''' Write scraped pages to text or pdf
+        Reads PART.html or user-inputted files
+    '''
     filtering_html = False
+
     if args['local']:
         ''' If user enters any HTML files then set filter for HTML '''
         ''' Check whether user is filtering text or html '''
-        if any(['.html' in x for x in pages]):
+        if any('.html' in x for x in pages):
             filtering_html = True
         in_files = utils.read_files(pages)
     else:
@@ -204,99 +295,9 @@ def write_pages(args, pages, out_file_name):
         in_files = utils.get_part_files(len(pages))
 
     if args['pdf']:
-        ''' Write pages to pdf '''
-
-        if isinstance(out_file_name, list):
-            out_file_names = [x + '.pdf' for x in out_file_name]
-            for f_name in out_file_names:
-                utils.clear_file(f_name)
-        else:
-            out_file_name = out_file_name + '.pdf'
-            utils.clear_file(out_file_name)
-
-        ''' Set pdfkit options '''
-        options = {}
-
-        ''' Only ignore errors if there is more than one page
-            This prevents an empty write if an error occurs
-        '''
-        if len(pages) > 1:
-            options['ignore-load-errors'] = None
-
-        if quiet:
-            options['quiet'] = None
-        else:
-            if not args['local']:
-                print('Attempting to write {0} page(s) to {1}.'
-                      .format(len(pages), out_file_name))
-
-        ''' Attempt conversion to pdf using pdfkit '''
-        try:
-            if not filtering_html:
-                sys.stderr.write('Only HTML can be converted to pdf.\n')
-                return
-
-            if args['local']:
-                for i, in_file in enumerate(in_files):
-                    if not quiet:
-                        print('Attempting to write to {0}.'
-                              .format(out_file_names[i]))
-                    pk.from_file(in_file, out_file_names[i], options=options)
-            else:
-                pk.from_file(in_files, out_file_name, options=options)
-        except (KeyboardInterrupt, Exception) as err:
-            if not args['local']:
-                ''' Remove PART.html files '''
-                utils.clear_part_files()
-            raise err
+        write_to_pdf(args, pages, in_files, out_file_name, filtering_html)
     else:
-        ''' Write pages to text '''
-
-        if args['local']:
-            ''' Write input files to multiple text files '''
-            out_file_names = [x + '.txt' for x in out_file_name]
-        else:
-            ''' Write PART files to a single text file '''
-            out_file_name = out_file_name + '.txt'
-
-            if not quiet:
-                print('Attempting to write {0} page(s) to {1}.'
-                      .format(len(pages), out_file_name))
-
-        for i, in_file in enumerate(in_files):
-            if filtering_html:
-                ''' Convert html text to lxml.html.HtmlElement object '''
-                html = lh.fromstring(in_file)
-                text = None
-            else:
-                html = None
-                text = in_file
-
-            if html is not None:
-                text = utils.get_text(html, args['filter'], args['attributes'])
-            elif text is not None:
-                text = utils.get_text(text, args['filter'], filter_html=False)
-            else:
-                if not quiet:
-                    if args['local']:
-                        sys.stderr.write('Failed to parse file {0}.\n'
-                                         .format(out_file_names[i].replace(
-                                             '.txt', '.html')))
-                    else:
-                        sys.stderr.write('Failed to parse part file {0}.\n'
-                                         .format(i+1))
-
-            if text:
-                if args['local']:
-                    if not quiet:
-                        print('Attempting to write to {0}.'
-                              .format(out_file_names[i]))
-                    utils.clear_file(out_file_names[i])
-                    utils.write_file(text, out_file_names[i])
-                else:
-                    utils.clear_file(out_file_name)
-                    utils.write_file(text, out_file_name)
-
+        write_to_text(args, pages, in_files, out_file_name, filtering_html)
     if not args['local']:
         ''' Remove PART.html files '''
         utils.clear_part_files()
@@ -386,15 +387,23 @@ def command_line_runner():
         print(__version__)
         return
 
-    if not args['quiet']:
-        if not args['text'] and not args['pdf'] and not args['html']:
-            print('Saving output as text by default. Specify an output type '
-                  'or use --quiet to silence this message.\n')
-
     if not args['urls']:
         parser.print_help()
-    else:
-        scrape(args)
+        return
+
+    if not args['text'] and not args['pdf'] and not args['html']:
+        valid_types = ['text', 'pdf', 'html']
+        try:
+            file_type = input('Save output as ({0}): '
+                              .format(', '.join(valid_types))).lower()
+            while file_type not in valid_types:
+                file_type = input('Invalid entry. Choose from ({0}): '
+                                  .format(', '.join(valid_types))).lower()
+        except KeyboardInterrupt:
+            return
+        args[file_type] = True
+
+    scrape(args)
 
 
 if __name__ == '__main__':

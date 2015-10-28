@@ -1,3 +1,9 @@
+0.4.4
+------
+
+ - prompts for filetype from user if none entered
+ - modularized a couple functions
+
 0.4.3
 ------
 
