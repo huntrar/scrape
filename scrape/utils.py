@@ -29,10 +29,9 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
                'AppleWebKit/536.5 (KHTML, like Gecko) '
                'Chrome/19.0.1084.46 Safari/536.5')
 
-CACHE_SIZE = 10  # Number of links to temporarily cache for preventing dupes
-
 
 def get_proxies():
+    ''' Get available proxies to use with requests library '''
     proxies = getproxies()
     filtered_proxies = {}
     for key, value in proxies.items():
@@ -45,8 +44,8 @@ def get_proxies():
 
 
 def get_html(url):
+    ''' Get HTML response as an lxml.html.HtmlElement object '''
     try:
-        ''' Get HTML response as an lxml.html.HtmlElement object '''
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
         return lh.fromstring(request.text.encode('utf-8'))
@@ -57,30 +56,33 @@ def get_html(url):
 
 
 def get_raw_html(url):
+    ''' Get HTML response as a str object '''
     try:
-        ''' Get HTML response as a string object '''
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
         return request.text.encode('utf-8')
     except Exception as err:
-        sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
+        sys.stderr.write('Failed to retrieve {0} as str.\n'.format(url))
         sys.stderr.write('{0}\n'.format(str(err)))
         return None
 
 
 def hash_text(text):
+    ''' Return MD5 hash '''
     md5 = hashlib.md5()
     md5.update(text)
     return md5.hexdigest()
 
 
-def cache_link(link_cache, link_hash):
+def cache_link(link_cache, link_hash, cache_size):
+    ''' Add a link to cache '''
     link_cache.append(link_hash)
-    if len(link_cache) > CACHE_SIZE:
+    if len(link_cache) > cache_size:
         link_cache.pop(0)
 
 
 def filter_re(lines, regexps):
+    ''' Filter text using regular expressions '''
     if regexps:
         regexps = [re.compile(x) for x in regexps]
         matched_lines = []
@@ -96,6 +98,7 @@ def filter_re(lines, regexps):
 
 
 def clean_attr(attr):
+    ''' Append @ to attributes and resolve text -> text() for XPath '''
     if attr:
         if 'text' in attr:
             return 'text()'
@@ -107,7 +110,8 @@ def clean_attr(attr):
     return None
 
 
-def get_text(html, filter_words=None, attributes=None, filter_html=True):
+def filter_text(html, filter_words=None, attributes=None, filter_html=True):
+    ''' Filter text using keywords and attributes '''
     if attributes:
         attributes = [clean_attr(x) for x in attributes]
         attributes = [x for x in attributes if x]
@@ -132,13 +136,14 @@ def get_text(html, filter_words=None, attributes=None, filter_html=True):
 
 
 def get_domain(url):
+    ''' Get the domain of a URL '''
     domain = '{url.netloc}'.format(url=urlparse(url))
     if '.' in domain:
         return domain.split('.')[-2]
     return domain
 
 
-def get_out_file(url, domain=None):
+def get_out_filename(url, domain=None):
     ''' Construct the output file name from partial domain and end of path '''
     if domain is None:
         domain = get_domain(url)
@@ -158,20 +163,24 @@ def get_out_file(url, domain=None):
 
 
 def add_scheme(url):
+    ''' Add scheme to URL '''
     return 'http://{0}'.format(url)
 
 
 def remove_scheme(url):
+    ''' Remove scheme from URL '''
     return url.replace('http://', '').replace('https://', '')
 
 
 def check_scheme(url):
+    ''' Check URL for a scheme '''
     if url and (url.startswith('http://') or url.startswith('https://')):
         return True
     return False
 
 
 def clean_url(url, base_url):
+    ''' Remove URL fragments and add base URL if necessary '''
     parsed_url = urlparse(url)
 
     ''' Remove URL fragments '''
@@ -185,28 +194,39 @@ def clean_url(url, base_url):
     return url.rstrip(string.punctuation)
 
 
-def resolve_url(url):
+def add_url_ext(url):
+    ''' Add .com to url '''
+    url = url.rstrip('/')
     if '.' not in url:
-        url = url + '.com'
-    return url.rstrip('/')
+        url = '{0}.com'.format(url)
+    return url
 
 
-def clear_file(file_name):
+def remove_file(file_name):
+    ''' Remove a file from disk '''
     try:
         os.remove(file_name)
-    except OSError:
-        pass
+        return True
+    except (OSError, IOError):
+        return False
 
 
 def write_file(text, file_name):
-    with open(file_name, 'a') as f:
-        for line in text:
-            if line.strip():
-                f.write(line)
-        f.write('\n')
+    ''' Write a file to disk '''
+    try:
+        with open(file_name, 'a') as f:
+            for line in text:
+                if line.strip():
+                    f.write(line)
+            f.write('\n')
+        return True
+    except (OSError, IOError):
+        sys.stderr.write('Failed to write {0}.\n'.format(file_name))
+        return False
 
 
-def change_directory(dir_name):
+def mkdir_and_cd(dir_name):
+    ''' Change directory and/or create it if necessary '''
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
         os.chdir(dir_name)
@@ -214,7 +234,8 @@ def change_directory(dir_name):
         os.chdir(dir_name)
 
 
-def get_num_parts():
+def get_num_part_files():
+    ''' Get the number of PART.html files currently saved to disk '''
     num_parts = 0
     for f_name in os.listdir(os.getcwd()):
         if 'PART' in f_name and f_name.endswith('.html'):
@@ -223,22 +244,25 @@ def get_num_parts():
 
 
 def write_part_file(html, part_num=None):
+    ''' Write PART.html files to disk '''
     if part_num is None:
-        part_num = get_num_parts() + 1
+        part_num = get_num_part_files() + 1
 
     f_name = 'PART{0}.html'.format(part_num)
     with open(f_name, 'w') as f:
         f.write(html)
 
 
-def get_part_files(num_parts=None):
+def get_part_filenames(num_parts=None):
+    ''' Get numbered PART.html filenames '''
     if num_parts is None:
-        num_parts = get_num_parts()
+        num_parts = get_num_part_files()
 
     return ['PART{0}.html'.format(i) for i in xrange(1, num_parts+1)]
 
 
 def read_files(files):
+    ''' Read files from disk using generator construct '''
     if isinstance(files, list):
         for f_name in files:
             with open(f_name, 'r') as f:
@@ -248,7 +272,8 @@ def read_files(files):
             yield f.read()
 
 
-def clear_part_files(num_parts=None):
-    files = get_part_files(num_parts)
+def remove_part_files(num_parts=None):
+    ''' Remove PART.html files from disk '''
+    files = get_part_filenames(num_parts)
     for f_name in files:
-        clear_file(f_name)
+        remove_file(f_name)

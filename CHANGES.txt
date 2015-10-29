@@ -1,3 +1,11 @@
+0.4.5
+------
+
+ - added docstrings to all functions
+ - fixed IOError when trying to convert local html to html
+ - fixed IOError when trying to convert local html to pdf
+ - fixed saving scraped files to text, was saving PART filenames instead
+
 0.4.4
 ------
 
