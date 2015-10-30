@@ -273,7 +273,7 @@ def get_part_filenames(num_parts=None):
     if num_parts is None:
         num_parts = get_num_part_files()
 
-    return ['PART{0}.html'.format(i) for i in xrange(1, num_parts+1)]
+    return ['PART{0}.html'.format(i) for i in range(1, num_parts+1)]
 
 
 def read_files(files):

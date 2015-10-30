@@ -1,3 +1,8 @@
+0.4.10
+------
+
+ - forgot to remove all occurrences of xrange
+
 0.4.9
 ------
 
