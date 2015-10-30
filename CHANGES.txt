@@ -1,3 +1,9 @@
+0.4.6
+------
+
+ - fixed html => text
+ - all conversions fixed, test_scrape.py added to keep it this way
+
 0.4.5
 ------
 
