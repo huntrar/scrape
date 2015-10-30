@@ -261,7 +261,7 @@ def write_part_file(html, part_num=None):
 
     ''' Decode bytes to str if necessary for Python 3 '''
     if type(html) == bytes:
-        html = html.decode('utf-8')
+        html = html.decode('ascii', 'ignore')
 
     f_name = 'PART{0}.html'.format(part_num)
     with open(f_name, 'w') as f:

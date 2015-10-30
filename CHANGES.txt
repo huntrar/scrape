@@ -1,3 +1,8 @@
+0.4.9
+------
+
+ - changed unicode decode to ascii decode when writing html to disk
+
 0.4.8
 ------
 
