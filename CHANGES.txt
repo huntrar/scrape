@@ -3,6 +3,7 @@
 
  - fixed html => text
  - all conversions fixed, test_scrape.py added to keep it this way
+ - added pdfkit to requirements.txt
 
 0.4.5
 ------
