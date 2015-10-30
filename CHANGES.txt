@@ -1,3 +1,8 @@
+0.4.7
+------
+
+ - fixed urlparse importerror in utils.py for python 3 users
+
 0.4.6
 ------
 

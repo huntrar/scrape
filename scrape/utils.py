@@ -4,7 +4,6 @@ import random
 import re
 import string
 import sys
-from urlparse import urlparse, urljoin
 
 import lxml.html as lh
 import requests
@@ -14,6 +13,11 @@ try:
     from urllib import getproxies
 except ImportError:
     from urllib.request import getproxies
+
+try:
+    from urlparse import urlparse, urljoin
+except ImportError:
+    from urllib.parse import urlparse, urljoin
 
 
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
