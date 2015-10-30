@@ -236,7 +236,7 @@ def write_to_text(args, in_files, out_file_name, filtering_html):
     for i, in_file in enumerate(in_files):
         if filtering_html:
             ''' Read a single HTML file and convert it to an lxml object '''
-            html = lh.fromstring(utils.read_files(in_file).next())
+            html = lh.fromstring(next(utils.read_files(in_file)))
             text = None
         else:
             html = None
