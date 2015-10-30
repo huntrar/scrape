@@ -196,11 +196,11 @@ def pdfkit_convert(args, in_files, out_file_names):
                 pk.from_file(in_file, out_file_names[i], options=options)
         else:
             pk.from_file(in_files, out_file_names[0], options=options)
-    except (KeyboardInterrupt, Exception) as err:
+    except (KeyboardInterrupt, Exception):
         if not args['local']:
             ''' Remove PART.html files '''
             utils.remove_part_files()
-        raise err
+        raise
 
 
 def write_to_pdf(args, in_files, out_file_name, filtering_html):
@@ -277,8 +277,8 @@ def write_pages(args, file_names, out_file_name):
         if any('.html' in x for x in file_names):
             filtering_html = True
 
-        ''' Converting to pdf requires filenames, not file contents '''
-        if args['pdf']:
+        ''' Conversion to non-HTML formats only requires filename '''
+        if not args['html']:
             in_files = file_names
         else:
             in_files = utils.read_files(file_names)
@@ -363,7 +363,7 @@ def scrape(args):
                     out_file = utils.get_out_filename(url, domain)
                     write_pages(args, pages, out_file)
 
-    except (KeyboardInterrupt, Exception) as err:
+    except (KeyboardInterrupt, Exception):
         if args['html']:
             ''' Return to base directory '''
             try:
@@ -373,7 +373,7 @@ def scrape(args):
         else:
             ''' Remove PART.html files '''
             utils.remove_part_files()
-        raise err
+        raise
 
 
 def command_line_runner():
