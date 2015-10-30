@@ -9,6 +9,13 @@ import lxml.html as lh
 import requests
 
 
+SYS_VERSION = sys.version_info[0]
+if SYS_VERSION == 2:
+    try:
+        range = xrange
+    except NameError:
+        pass
+
 try:
     from urllib import getproxies
 except ImportError:
@@ -251,6 +258,10 @@ def write_part_file(html, part_num=None):
     ''' Write PART.html files to disk '''
     if part_num is None:
         part_num = get_num_part_files() + 1
+
+    ''' Decode bytes to str if necessary for Python 3 '''
+    if type(html) == bytes:
+        html = html.decode('utf-8')
 
     f_name = 'PART{0}.html'.format(part_num)
     with open(f_name, 'w') as f:
