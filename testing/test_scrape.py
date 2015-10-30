@@ -27,7 +27,6 @@ class ScrapeTestCase(unittest.TestCase):
         pass
 
     def test_html_to_text(self):
-        print 'converting html to text'
         self.call_scrape(self.html_files, 'text')
         out_file_names = [x.replace('.html', '.txt') for x in self.html_files]
         
@@ -38,7 +37,6 @@ class ScrapeTestCase(unittest.TestCase):
 
     ''' Requires whtmltopdf executable to run
     def test_html_to_pdf(self):
-        print 'converting html to pdf'
         self.call_scrape(self.html_files, 'pdf')
         out_file_names = [x.replace('.html', '.pdf') for x in self.html_files]
         
@@ -50,7 +48,6 @@ class ScrapeTestCase(unittest.TestCase):
 
     ''' Requires whtmltopdf executable to run
     def test_url_to_pdf(self):
-        print 'converting url to pdf'
         self.call_scrape([self.url], 'pdf')
         out_file = utils.get_out_filename(self.url) + '.pdf'
         self.assertTrue(os.path.isfile(out_file)) 
@@ -58,21 +55,12 @@ class ScrapeTestCase(unittest.TestCase):
     '''
 
     def test_url_to_text(self):
-        print 'converting url to text'
         self.call_scrape([self.url], 'text')
         out_file = utils.get_out_filename(self.url) + '.txt'
         self.assertTrue(os.path.isfile(out_file)) 
         self.assertTrue(utils.remove_file(out_file))
 
-    def test_url_to_pdf(self):
-        print 'converting url to pdf'
-        self.call_scrape([self.url], 'pdf')
-        out_file = utils.get_out_filename(self.url) + '.pdf'
-        self.assertTrue(os.path.isfile(out_file)) 
-        self.assertTrue(utils.remove_file(out_file))
-
     def test_url_to_html(self):
-        print 'converting url to html'
         self.call_scrape([self.url], 'html')
         domain = utils.get_domain(self.url)
         self.assertTrue(os.path.isfile('{0}/PART1.html'.format(domain)))
