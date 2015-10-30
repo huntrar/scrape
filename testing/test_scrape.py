@@ -36,15 +36,26 @@ class ScrapeTestCase(unittest.TestCase):
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(utils.remove_file(out_file))
 
+    ''' Requires whtmltopdf executable to run
     def test_html_to_pdf(self):
         print 'converting html to pdf'
         self.call_scrape(self.html_files, 'pdf')
         out_file_names = [x.replace('.html', '.pdf') for x in self.html_files]
         
-        ''' Assert new files have been created, then assert their deletion '''
+        # Assert new files have been created, then assert their deletion
         for out_file in out_file_names:
             self.assertTrue(os.path.isfile(out_file))
             self.assertTrue(utils.remove_file(out_file))
+    '''
+
+    ''' Requires whtmltopdf executable to run
+    def test_url_to_pdf(self):
+        print 'converting url to pdf'
+        self.call_scrape([self.url], 'pdf')
+        out_file = utils.get_out_filename(self.url) + '.pdf'
+        self.assertTrue(os.path.isfile(out_file)) 
+        self.assertTrue(utils.remove_file(out_file))
+    '''
 
     def test_url_to_text(self):
         print 'converting url to text'
