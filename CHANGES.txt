@@ -1,3 +1,8 @@
+0.5.3
+------
+
+ - fixed IndexError in write_to_text
+
 0.5.2
 ------
 

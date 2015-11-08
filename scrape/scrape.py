@@ -234,7 +234,8 @@ def write_to_text(args, in_file_names, out_file_names):
         ''' Aggregate all text for writing to a single output file '''
         all_text = []
 
-    for i, in_file_name in enumerate(in_file_names):
+    for i, (in_file_name, out_file_name) in enumerate(zip(in_file_names,
+                                                          out_file_names)):
         if in_file_name.endswith('.html'):
             ''' Convert HTML to lxml object for content parsing '''
             html = lh.fromstring(next(utils.read_files(in_file_name)))
@@ -253,7 +254,7 @@ def write_to_text(args, in_file_names, out_file_names):
             if not args['quiet']:
                 if args['files']:
                     sys.stderr.write('Failed to parse file {0}.\n'
-                                     .format(out_file_names[i].replace(
+                                     .format(out_file_name.replace(
                                          '.txt', '.html')))
                 else:
                     sys.stderr.write('Failed to parse PART{0}.html.\n'
@@ -263,9 +264,9 @@ def write_to_text(args, in_file_names, out_file_names):
             if args['multiple']:
                 if not args['quiet']:
                     print('Attempting to write to {0}.'
-                          .format(out_file_names[i]))
-                utils.remove_file(out_file_names[i])
-                utils.write_file(parsed_text, out_file_names[i])
+                          .format(out_file_name))
+                utils.remove_file(out_file_name)
+                utils.write_file(parsed_text, out_file_name)
             elif args['single']:
                 all_text += parsed_text
 
