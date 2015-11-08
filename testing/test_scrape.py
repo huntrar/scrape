@@ -52,25 +52,14 @@ class ScrapeTestCase(unittest.TestCase):
             shutil.rmtree(subdir_path)
 
     def get_single_out_name(self):
-        out_file_name = ''
-        possible_out_name = ''
-        out_it = 0
         ''' Use first possible entry in query as filename '''
-        try:
-            while not out_file_name:
-                possible_out_name = self.query[out_it]
-                if (possible_out_name in self.html_files or
-                    possible_out_name in self.text_files):
-                    return '.'.join(possible_out_name.split('.')[:-1])
-                for url in self.urls:
-                    if possible_out_name in url:
-                        domain = utils.get_domain(url)
-                        return utils.get_out_filename(url, domain)
-                        break
-                out_it += 1
-        except IndexError:
-            sys.stderr.write('Failed to choose an out file name\n')
-            raise
+        for arg in self.query:
+            if arg in self.html_files or arg in self.text_files:
+                return '.'.join(arg.split('.')[:-1])
+            for url in self.urls:
+                if arg in url:
+                    domain = utils.get_domain(url)
+                    return utils.get_out_filename(url, domain)
         return ''
 
     ''' to_pdf functions require wkhtmltopdf executable to run
