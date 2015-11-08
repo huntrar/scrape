@@ -1,3 +1,8 @@
+0.5.2
+------
+
+ - small fix for finding single out file name
+
 0.5.1
 ------
 

@@ -306,7 +306,7 @@ def get_single_out_name(args):
     ''' Use first possible entry in query as filename '''
     for arg in args['query']:
         if arg in args['files']:
-            return '.'.join(possible_out_name.split('.')[:-1])
+            return '.'.join(arg.split('.')[:-1])
         for url in args['urls']:
             if arg in url:
                 domain = utils.get_domain(url)
