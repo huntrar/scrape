@@ -121,7 +121,7 @@ def clean_attr(attr):
     return None
 
 
-def filter_text(html, filter_words=None, attributes=None, filter_html=True):
+def parse_text(in_file, filter_words=None, attributes=None, filter_html=True):
     ''' Filter text using keywords and attributes '''
     if attributes:
         attributes = [clean_attr(x) for x in attributes]
@@ -132,17 +132,17 @@ def filter_text(html, filter_words=None, attributes=None, filter_html=True):
     text = []
     for attr in attributes:
         if filter_html:
-            new_text = html.xpath('//*[not(self::script) and \
+            new_text = in_file.xpath('//*[not(self::script) and \
                                   not(self::style)]/{0}'.format(attr))
         else:
-            new_text = html.split('\n')
+            new_text = [x for x in re.split('(\n)', in_file) if x]
 
         if filter_words:
             new_text = filter_re(new_text, filter_words)
 
         text += new_text
 
-    return [''.join(x for x in line.strip() if x in string.printable) + '\n'
+    return [''.join(x for x in line if x in string.printable)
             for line in text]
 
 
@@ -168,6 +168,8 @@ def get_out_filename(url, domain=None):
     if tail_url:
         if '/' in tail_url:
             tail_url = [x for x in tail_url.split('/') if x][-1]
+        if not domain:
+            return tail_url
         return domain + '-' + tail_url
     else:
         return domain
@@ -226,10 +228,7 @@ def write_file(text, file_name):
     ''' Write a file to disk '''
     try:
         with open(file_name, 'a') as f:
-            for line in text:
-                if line.strip():
-                    f.write(line)
-            f.write('\n')
+            [f.write(line) for line in text if line]
         return True
     except (OSError, IOError):
         sys.stderr.write('Failed to write {0}.\n'.format(file_name))
@@ -249,7 +248,7 @@ def get_num_part_files():
     ''' Get the number of PART.html files currently saved to disk '''
     num_parts = 0
     for f_name in os.listdir(os.getcwd()):
-        if 'PART' in f_name and f_name.endswith('.html'):
+        if f_name.startswith('PART') and f_name.endswith('.html'):
             num_parts += 1
     return num_parts
 
@@ -273,7 +272,7 @@ def get_part_filenames(num_parts=None):
     if num_parts is None:
         num_parts = get_num_part_files()
 
-    return ['PART{0}.html'.format(i) for i in range(1, num_parts+1)]
+    return ['PART{0}.html'.format(i) for i in range(1, num_parts + 1)]
 
 
 def read_files(files):
