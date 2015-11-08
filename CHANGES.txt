@@ -1,3 +1,8 @@
+0.5.1
+------
+
+ - remade method to find single out file name
+
 0.5.0
 ------
 

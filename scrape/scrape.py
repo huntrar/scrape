@@ -231,7 +231,7 @@ def write_to_text(args, in_file_names, out_file_names):
         ''' Write input files to a single text file '''
         out_file_name = out_file_names[0] + '.txt'
 
-        ''' Aggregate all text for writing to a single output file ''' 
+        ''' Aggregate all text for writing to a single output file '''
         all_text = []
 
     for i, in_file_name in enumerate(in_file_names):
@@ -272,7 +272,7 @@ def write_to_text(args, in_file_names, out_file_names):
                 ''' Newline added between multiple files being aggregated '''
                 if len(in_file_names) > 1 and i < len(in_file_names) - 1:
                     all_text += ['\n']
-    
+
     ''' Write all text to a single output file '''
     if args['single']:
         if not args['quiet']:
@@ -303,23 +303,14 @@ def write_files(args, file_names, out_file_names, file_types):
 
 
 def get_single_out_name(args):
-    out_file_name = ''
-    possible_out_name = ''
-    out_it = 0
     ''' Use first possible entry in query as filename '''
-    try:
-        while not out_file_name:
-            possible_out_name = args['query'][out_it]
-            if possible_out_name in args['files']:
-                return '.'.join(possible_out_name.split('.')[:-1])
-            for url in args['urls']:
-                if possible_out_name in url:
-                    domain = utils.get_domain(url)
-                    return utils.get_out_filename(url, domain)
-            out_it += 1
-    except IndexError:
-        sys.stderr.write('Failed to choose an out file name\n')
-        raise
+    for arg in args['query']:
+        if arg in args['files']:
+            return '.'.join(possible_out_name.split('.')[:-1])
+        for url in args['urls']:
+            if arg in url:
+                domain = utils.get_domain(url)
+                return utils.get_out_filename(url, domain)
     return ''
 
 
@@ -356,7 +347,8 @@ def write_single_file(args, base_dir):
     else:
         ''' Write files to text or pdf '''
         out_file_name = get_single_out_name(args)
-        write_files(args, file_names, [out_file_name], file_types)
+        if out_file_name:
+            write_files(args, file_names, [out_file_name], file_types)
     return True
 
 
