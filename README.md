@@ -1,4 +1,4 @@
-# scrape [![Build Status](https://travis-ci.org/huntrar/scrape.svg?branch=master)](https://travis-ci.org/huntrar/scrape) [![PyPI](https://img.shields.io/pypi/dm/scrape.svg?style=flat)]()
+# scrape [![PyPI Version](https://img.shields.io/pypi/v/scrape.svg)](https://pypi.python.org/pypi/scrape) [![Build Status](https://travis-ci.org/huntrar/scrape.svg?branch=master)](https://travis-ci.org/huntrar/scrape) [![PyPI Monthly downloads](https://img.shields.io/pypi/dm/scrape.svg?style=flat)](https://pypi.python.org/pypi/scrape)
 
 ## a command-line web scraping tool
 
