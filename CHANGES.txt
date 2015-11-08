@@ -1,3 +1,8 @@
+0.5.4
+------
+
+ - fixed redefinition of out_file_name in write_to_text
+
 0.5.3
 ------
 

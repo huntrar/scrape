@@ -228,9 +228,6 @@ def write_to_text(args, in_file_names, out_file_names):
         txt_file_names = [x + '.txt' for x in out_file_names]
         out_file_names = txt_file_names
     elif args['single']:
-        ''' Write input files to a single text file '''
-        out_file_name = out_file_names[0] + '.txt'
-
         ''' Aggregate all text for writing to a single output file '''
         all_text = []
 
@@ -276,6 +273,8 @@ def write_to_text(args, in_file_names, out_file_names):
 
     ''' Write all text to a single output file '''
     if args['single']:
+        out_file_name = out_file_names[0] + '.txt'
+
         if not args['quiet']:
             print('Attempting to write {0} page(s) to {1}.'
                   .format(len(in_file_names), out_file_name))
