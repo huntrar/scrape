@@ -34,7 +34,7 @@ def get_parser():
     ''' Parse command-line arguments using argparse library '''
     parser = argp.ArgumentParser(
         description='a command-line web scraping tool')
-    parser.add_argument('urls', type=str, nargs='*',
+    parser.add_argument('query', type=str, nargs='*',
                         help='URLs/files to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
                         help='extract text using tag attributes')
@@ -44,7 +44,9 @@ def get_parser():
                         action='store_true')
     parser.add_argument('-f', '--filter', type=str, nargs='*',
                         help='regexp rules for filtering text')
-    parser.add_argument('-ht', '--html', help='write pages as HTML',
+    parser.add_argument('-ht', '--html', help='write files as HTML',
+                        action='store_true')
+    parser.add_argument('-m', '--multiple', help='save to multiple files',
                         action='store_true')
     parser.add_argument('-mp', '--maxpages', type=int,
                         help='max number of pages to crawl')
@@ -52,18 +54,20 @@ def get_parser():
                         help='max number of links to scrape')
     parser.add_argument('-n', '--nonstrict', action='store_true',
                         help='allow crawler to visit any domain')
-    parser.add_argument('-p', '--pdf', help='write pages as pdf',
+    parser.add_argument('-p', '--pdf', help='write files as pdf',
                         action='store_true')
     parser.add_argument('-q', '--quiet', help='suppress program output',
                         action='store_true')
-    parser.add_argument('-t', '--text', help='write pages as text (default)',
+    parser.add_argument('-s', '--single', help='save to a single file',
+                        action='store_true')
+    parser.add_argument('-t', '--text', help='write files as text (default)',
                         action='store_true')
     parser.add_argument('-v', '--version', help='display current version',
                         action='store_true')
     return parser
 
 
-def follow_links(args, uncrawled_links, crawled_links, base_url):
+def follow_links(args, uncrawled_links, crawled_links, base_url, domain):
     ''' Follow links that have not been crawled yet '''
     crawled_ct = 1
     link_cache = []
@@ -87,7 +91,7 @@ def follow_links(args, uncrawled_links, crawled_links, base_url):
                     ''' Compute a hash of the page
                         Check if it is in the page cache
                     '''
-                    page_text = utils.filter_text(html)
+                    page_text = utils.parse_text(html)
                     link_hash = utils.hash_text(''.join(page_text))
 
                     ''' Ignore page if found in cache, otherwise add it '''
@@ -109,14 +113,14 @@ def follow_links(args, uncrawled_links, crawled_links, base_url):
                             links = utils.filter_re(links, keyword)
 
                     ''' Domain may be restricted to the seed domain '''
-                    if not args['nonstrict'] and args['domain'] in url:
-                        links = [x for x in links if args['domain'] in x]
+                    if not args['nonstrict'] and domain in url:
+                        links = [x for x in links if domain in x]
 
                     ''' Update uncrawled links with new links
                         add scheme-less URL to crawled links
                         write_part_file creates a temporary
                         PART.html file to be processed in
-                        write_pages
+                        write_files
                     '''
                     uncrawled_links.update(links)
                     crawled_links.add(utils.remove_scheme(url))
@@ -132,7 +136,7 @@ def follow_links(args, uncrawled_links, crawled_links, base_url):
         pass
 
 
-def crawl(args, base_url):
+def crawl(args, base_url, domain):
     ''' Find links given a seed URL and follow them breadth-first '''
     crawled_links = set()
     uncrawled_links = OrderedSet()
@@ -147,7 +151,7 @@ def crawl(args, base_url):
 
         ''' Domain may be restricted to the seed domain '''
         if not args['nonstrict']:
-            links = [x for x in links if args['domain'] in x]
+            links = [x for x in links if domain in x]
 
         ''' Links may have keywords to follow them by '''
         if args['crawl']:
@@ -157,7 +161,7 @@ def crawl(args, base_url):
         ''' Update uncrawled links with new links
             add scheme-less URL to crawled links
             write_part_file creates a temporary PART.html file
-            to be processed in write_pages
+            to be processed in write_files
         '''
         uncrawled_links.update(links)
         crawled_links.add(utils.remove_scheme(base_url))
@@ -165,135 +169,229 @@ def crawl(args, base_url):
         if not args['quiet']:
             print('Crawled {0} (#{1}).'.format(base_url, len(crawled_links)))
 
-        follow_links(args, uncrawled_links, crawled_links, base_url)
-
-    return list(crawled_links)
+        follow_links(args, uncrawled_links, crawled_links, base_url, domain)
 
 
-def pdfkit_convert(args, in_files, out_file_names):
+def pdfkit_convert(args, in_file_names, out_file_names):
     ''' Attempt file conversion to pdf using pdfkit '''
     options = {}
 
     ''' Only ignore errors if there is more than one page
         This prevents an empty write if an error occurs
     '''
-    if len(in_files) > 1:
+    if len(in_file_names) > 1:
         options['ignore-load-errors'] = None
 
-    if args['quiet']:
-        options['quiet'] = None
-    else:
-        if not args['local']:
-            print('Attempting to write {0} page(s) to {1}.'
-                  .format(len(in_files), out_file_names[0]))
-
     try:
-        if args['local']:
-            for i, in_file in enumerate(in_files):
+        if args['multiple']:
+            for i, in_file_name in enumerate(in_file_names):
                 if not args['quiet']:
                     print('Attempting to write to {0}.'
                           .format(out_file_names[i]))
-                pk.from_file(in_file, out_file_names[i], options=options)
-        else:
-            pk.from_file(in_files, out_file_names[0], options=options)
+                else:
+                    options['quiet'] = None
+
+                pk.from_file(in_file_name, out_file_names[i], options=options)
+        elif args['single']:
+            if not args['quiet']:
+                print('Attempting to write {0} page(s) to {1}.'
+                      .format(len(in_file_names), out_file_names[0]))
+            else:
+                options['quiet'] = None
+
+            pk.from_file(in_file_names, out_file_names[0], options=options)
     except (KeyboardInterrupt, Exception):
-        if not args['local']:
+        if args['urls']:
             ''' Remove PART.html files '''
             utils.remove_part_files()
         raise
 
 
-def write_to_pdf(args, in_files, out_file_name, filtering_html):
-    ''' Write pages to pdf '''
-    if not filtering_html:
-        sys.stderr.write('Only HTML can be converted to pdf.\n')
-        return False
-
-    if isinstance(out_file_name, list):
-        out_file_names = [x + '.pdf' for x in out_file_name]
+def write_to_pdf(args, in_file_names, out_file_names):
+    ''' Write files to pdf '''
+    if args['multiple']:
+        pdf_file_names = [x + '.pdf' for x in out_file_names]
+        out_file_names = pdf_file_names
         for f_name in out_file_names:
             utils.remove_file(f_name)
-        pdfkit_convert(args, in_files, out_file_names)
-    else:
-        out_file_name = out_file_name + '.pdf'
+        pdfkit_convert(args, in_file_names, out_file_names)
+    elif args['single']:
+        out_file_name = out_file_names[0] + '.pdf'
         utils.remove_file(out_file_name)
-        pdfkit_convert(args, in_files, [out_file_name])
+        pdfkit_convert(args, in_file_names, [out_file_name])
 
 
-def write_to_text(args, in_files, out_file_name, filtering_html):
-    ''' Write pages to text '''
-    if args['local']:
+def write_to_text(args, in_file_names, out_file_names):
+    ''' Write files to text '''
+    if args['multiple']:
         ''' Write input files to multiple text files '''
-        out_file_names = [x + '.txt' for x in out_file_name]
-    else:
-        ''' Write PART files to a single text file '''
-        out_file_name = out_file_name + '.txt'
+        txt_file_names = [x + '.txt' for x in out_file_names]
+        out_file_names = txt_file_names
+    elif args['single']:
+        ''' Write input files to a single text file '''
+        out_file_name = out_file_names[0] + '.txt'
 
-        if not args['quiet']:
-            print('Attempting to write {0} page(s) to {1}.'
-                  .format(len(in_files), out_file_name))
+        ''' Aggregate all text for writing to a single output file ''' 
+        all_text = []
 
-    for i, in_file in enumerate(in_files):
-        if filtering_html:
-            ''' Read a single HTML file and convert it to an lxml object '''
-            html = lh.fromstring(next(utils.read_files(in_file)))
+    for i, in_file_name in enumerate(in_file_names):
+        if in_file_name.endswith('.html'):
+            ''' Convert HTML to lxml object for content parsing '''
+            html = lh.fromstring(next(utils.read_files(in_file_name)))
             text = None
         else:
             html = None
-            text = in_file
+            text = next(utils.read_files(in_file_name))
 
         if html is not None:
-            text = utils.filter_text(html, args['filter'], args['attributes'])
+            parsed_text = utils.parse_text(html, args['filter'],
+                                           args['attributes'])
         elif text is not None:
-            text = utils.filter_text(text, args['filter'], filter_html=False)
+            parsed_text = utils.parse_text(text, args['filter'],
+                                           filter_html=False)
         else:
             if not args['quiet']:
-                if args['local']:
+                if args['files']:
                     sys.stderr.write('Failed to parse file {0}.\n'
                                      .format(out_file_names[i].replace(
                                          '.txt', '.html')))
                 else:
-                    sys.stderr.write('Failed to parse part file {0}.\n'
-                                     .format(i+1))
+                    sys.stderr.write('Failed to parse PART{0}.html.\n'
+                                     .format(i + 1))
 
-        if text:
-            if args['local']:
+        if parsed_text:
+            if args['multiple']:
                 if not args['quiet']:
                     print('Attempting to write to {0}.'
                           .format(out_file_names[i]))
                 utils.remove_file(out_file_names[i])
-                utils.write_file(text, out_file_names[i])
-            else:
-                utils.remove_file(out_file_name)
-                utils.write_file(text, out_file_name)
+                utils.write_file(parsed_text, out_file_names[i])
+            elif args['single']:
+                all_text += parsed_text
+
+                ''' Newline added between multiple files being aggregated '''
+                if len(in_file_names) > 1 and i < len(in_file_names) - 1:
+                    all_text += ['\n']
+    
+    ''' Write all text to a single output file '''
+    if args['single']:
+        if not args['quiet']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(in_file_names), out_file_name))
+        utils.remove_file(out_file_name)
+        utils.write_file(all_text, out_file_name)
 
 
-def write_pages(args, file_names, out_file_name):
+def write_files(args, file_names, out_file_names, file_types):
     ''' Write scraped pages or user-inputted files to text or pdf '''
-    filtering_html = False
-    if args['local']:
-        ''' If user enters any HTML files then set filter for HTML '''
-        ''' Check whether user is filtering text or html '''
-        if any('.html' in x for x in file_names):
-            filtering_html = True
+    in_file_names = []
+    if 'files' in file_types:
+        in_file_names += file_names
 
-        ''' Conversion to non-HTML formats only requires filename '''
-        if not args['html']:
-            in_files = file_names
-        else:
-            in_files = utils.read_files(file_names)
-    else:
-        ''' Scraped URLs are downloaded as HTML files '''
-        filtering_html = True
-        in_files = utils.get_part_filenames(len(file_names))
+    if 'urls' in file_types:
+        ''' Scraped URLs are downloaded as PART.html files '''
+        in_file_names += utils.get_part_filenames()
 
     if args['pdf']:
-        write_to_pdf(args, in_files, out_file_name, filtering_html)
-    else:
-        write_to_text(args, in_files, out_file_name, filtering_html)
-    if not args['local']:
+        write_to_pdf(args, in_file_names, out_file_names)
+    elif args['text']:
+        write_to_text(args, in_file_names, out_file_names)
+
+    if 'urls' in file_types and not args['html']:
         ''' Remove PART.html files '''
         utils.remove_part_files()
+
+
+def get_single_out_name(args):
+    out_file_name = ''
+    possible_out_name = ''
+    out_it = 0
+    ''' Use first possible entry in query as filename '''
+    try:
+        while not out_file_name:
+            possible_out_name = args['query'][out_it]
+            if possible_out_name in args['files']:
+                return '.'.join(possible_out_name.split('.')[:-1])
+            for url in args['urls']:
+                if possible_out_name in url:
+                    domain = utils.get_domain(url)
+                    return utils.get_out_filename(url, domain)
+            out_it += 1
+    except IndexError:
+        sys.stderr.write('Failed to choose an out file name\n')
+        raise
+    return ''
+
+
+def write_single_file(args, base_dir):
+    ''' Write to a single output file and/or subdirectory '''
+    file_types = []
+    if args['html'] and args['urls']:
+        file_types.append('urls')
+        file_names = []
+
+        ''' Create a single directory to store HTML files in '''
+        domain = args['domains'][0]
+        if not args['quiet']:
+            print('Storing html files in {0}/'.format(domain))
+        utils.mkdir_and_cd(domain)
+    if args['files']:
+        file_types.append('files')
+        file_names = list(args['files'])
+
+    for url in args['urls']:
+        if args['crawl'] or args['crawl_all']:
+            ''' crawl traverses and saves pages as PART.html files '''
+            crawl(args, url, domain)
+        else:
+            raw_html = utils.get_raw_html(url)
+            if raw_html is not None:
+                utils.write_part_file(raw_html)
+            else:
+                return False
+
+    if args['html']:
+        ''' Return to base directory, HTML files have been written '''
+        os.chdir(base_dir)
+    else:
+        ''' Write files to text or pdf '''
+        out_file_name = get_single_out_name(args)
+        write_files(args, file_names, [out_file_name], file_types)
+    return True
+
+
+def write_multiple_files(args, base_dir):
+    ''' Write to multiple output files and/or subdirectories '''
+    for file_name in args['files']:
+        file_names = [file_name]
+        out_file_names = ['.'.join(file_name.split('.')[:-1])]
+        write_files(args, file_names, out_file_names, ['files'])
+
+    for url, domain in zip(args['urls'], args['domains']):
+        if args['html']:
+            ''' Save .html files in a subdir named after the domain '''
+            if not args['quiet']:
+                print('Storing html files in {0}/'.format(domain))
+            utils.mkdir_and_cd(domain)
+
+        if args['crawl'] or args['crawl_all']:
+            ''' crawl traverses and saves pages as PART.html files '''
+            crawl(args, url, domain)
+        else:
+            raw_html = utils.get_raw_html(url)
+            if raw_html is not None:
+                utils.write_part_file(raw_html)
+            else:
+                return False
+
+        if args['html']:
+            ''' Return to base directory, HTML files have been written '''
+            os.chdir(base_dir)
+        else:
+            ''' Write files to text or pdf '''
+            out_file_names = [utils.get_out_filename(url, domain)]
+            write_files(args, [], out_file_names, ['urls'])
+    return True
 
 
 def scrape(args):
@@ -301,68 +399,42 @@ def scrape(args):
     try:
         base_dir = os.getcwd()
 
-        ''' Check if local files entered instead of URLs '''
-        args['local'] = None
-        for arg_url in args['urls']:
-            if os.path.isfile(arg_url):
-                args['local'] = args['urls']
+        ''' Detect whether to save to a single or multiple files '''
+        if not args['single'] and not args['multiple']:
+            ''' Save to multiple files if multiple files/URL's entered '''
+            if len(args['query']) > 1:
+                args['multiple'] = True
+            else:
+                args['single'] = True
 
-        ''' Avoid converting local files to HTML, currently does nothing '''
-        if args['local'] and args['html']:
+        ''' Split query input into local files and URL's '''
+        args['files'] = []
+        args['urls'] = []
+        for arg in args['query']:
+            if os.path.isfile(arg):
+                args['files'].append(arg)
+            else:
+                args['urls'].append(arg)
+
+        ''' Print error if attempting to convert local files to HTML '''
+        if args['files'] and args['html']:
             sys.stderr.write('Cannot convert local files to HTML.\n')
-            return False
+            args['files'] = []
 
-        ''' Read in local files '''
-        if args['local']:
-            pages = []
-            out_files = []
-            for f_name in args['local']:
-                if os.path.isfile(f_name):
-                    ''' The proper file extension is added in write_pages '''
-                    out_files.append('.'.join(f_name.split('.')[:-1]))
-                    pages.append(f_name)
-                else:
-                    sys.stderr.write('{0} was not found.\n'.format(f_name))
-                    return False
-            write_pages(args, pages, out_files)
+        if args['urls']:
+            ''' Add URL extensions and schemes '''
+            urls_with_exts = [utils.add_url_ext(x) for x in args['urls']]
+            args['urls'] = [utils.add_scheme(x) if not utils.check_scheme(x)
+                            else x for x in urls_with_exts]
+
+            args['domains'] = [utils.get_domain(x) for x in args['urls']]
         else:
-            ''' Scrape URLs '''
-            for arg_url in args['urls']:
-                url = utils.add_url_ext(arg_url)
+            args['domains'] = []
 
-                ''' Add http:// scheme if none found '''
-                if not utils.check_scheme(url):
-                    url = utils.add_scheme(url)
-
-                domain = utils.get_domain(url)
-                args['domain'] = domain
-
-                if args['html']:
-                    ''' Save .html files in a subdir named after the domain '''
-                    if not args['quiet']:
-                        print('Storing html files in {0}/'.format(domain))
-                    utils.mkdir_and_cd(domain)
-
-                if args['crawl'] or args['crawl_all']:
-                    ''' crawl traverses and saves pages as PART.html files '''
-                    pages = crawl(args, url)
-                else:
-                    pages = [url]
-                    raw_html = utils.get_raw_html(url)
-                    if raw_html is not None:
-                        utils.write_part_file(raw_html, len(pages))
-                    else:
-                        return False
-
-                if args['html']:
-                    ''' Return to base directory, files have been written '''
-                    os.chdir(base_dir)
-                else:
-                    ''' Write pages to text or pdf '''
-                    ''' The proper file extension is added in write_pages '''
-                    out_file = utils.get_out_filename(url, domain)
-                    write_pages(args, pages, out_file)
-
+        if args['single']:
+            return write_single_file(args, base_dir)
+        elif args['multiple']:
+            return write_multiple_files(args, base_dir)
     except (KeyboardInterrupt, Exception):
         if args['html']:
             ''' Return to base directory '''
@@ -385,7 +457,7 @@ def command_line_runner():
         print(__version__)
         return
 
-    if not args['urls']:
+    if not args['query']:
         parser.print_help()
         return
 

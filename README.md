@@ -2,7 +2,7 @@
 
 ## a command-line web scraping tool
 
-scrape can extract, filter, and convert webpages to text, pdf, or HTML files. A link crawler can traverse websites using regular expression keywords. Users may also choose to enter local files to filter and/or convert.
+scrape extracts and filters web pages or local HTML/text files using regex keywords and tag attributes. It supports cross-domain web traversal and data consolidation to text, pdf, or a subdirectory containing HTML.
 
 ## Installation
     pip install scrape
@@ -22,13 +22,14 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Usage
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
                      [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
-                     [-ht] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-p] [-q] [-t] [-v]
-                     [urls [urls ...]]
+                     [-ht] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-p] [-q] [-s]
+                     [-t] [-v]
+                     [query [query ...]]
     
     a command-line web scraping tool
     
     positional arguments:
-      urls                  URLs/files to scrape
+      query                 URLs/files to scrape
     
     optional arguments:
       -h, --help            show this help message and exit
@@ -39,15 +40,17 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -ca, --crawl-all      crawl all pages
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
                             regexp rules for filtering text
-      -ht, --html           write pages as HTML
+      -ht, --html           write files as HTML
+      -m, --multiple        save to multiple files
       -mp MAXPAGES, --maxpages MAXPAGES
                             max number of pages to crawl
       -ml MAXLINKS, --maxlinks MAXLINKS
                             max number of links to scrape
       -n, --nonstrict       allow crawler to visit any domain
-      -p, --pdf             write pages as pdf
+      -p, --pdf             write files as pdf
       -q, --quiet           suppress program output
-      -t, --text            write pages as text (default)
+      -s, --single          save to a single file
+      -t, --text            write files as text (default)
       -v, --version         display current version
 
 ## Author
@@ -55,10 +58,10 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 
 ## Notes
 * Supports both Python 2.x and Python 3.x.
-* Pages are converted to text by default, you can specify --html or --pdf to save to a different format.
-* Filtering text is done by entering one or more regexps to --filter.
-* You may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
 * Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
 * To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
 * Crawling can be stopped by Ctrl-C or alternatively by setting the number of pages or links to be crawled using --maxpages and --maxlinks. A page may contain zero or many links to more pages.
+* Filtering text is done by entering one or more regexps to --filter.
+* You may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
+* Multiple files/URL's are saved to multiple output files/directories by default. To consolidate them, use the --single flag.

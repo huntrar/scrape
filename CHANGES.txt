@@ -1,3 +1,10 @@
+0.5.0
+------
+
+ - can now save to single or multiple output files/directories
+ - added tests for writing to single or multiple files
+ - preserves original lines/newlines when parsing/writing files
+
 0.4.11
 ------
 
