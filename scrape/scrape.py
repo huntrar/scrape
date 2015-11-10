@@ -269,7 +269,7 @@ def write_to_text(args, in_file_names, out_file_names):
 
                 ''' Newline added between multiple files being aggregated '''
                 if len(in_file_names) > 1 and i < len(in_file_names) - 1:
-                    all_text += ['\n']
+                    all_text.append('\n')
 
     ''' Write all text to a single output file '''
     if args['single']:
@@ -318,17 +318,17 @@ def write_single_file(args, base_dir):
     ''' Write to a single output file and/or subdirectory '''
     file_types = []
     file_names = []
-    if args['html'] and args['urls']:
+    if args['urls']:
         file_types.append('urls')
-
-        ''' Create a single directory to store HTML files in '''
-        domain = args['domains'][0]
-        if not args['quiet']:
-            print('Storing html files in {0}/'.format(domain))
-        utils.mkdir_and_cd(domain)
+        if args['html']:
+            ''' Create a single directory to store HTML files in '''
+            domain = args['domains'][0]
+            if not args['quiet']:
+                print('Storing html files in {0}/'.format(domain))
+            utils.mkdir_and_cd(domain)
     if args['files']:
         file_types.append('files')
-        file_names = list(args['files'])
+        file_names += list(args['files'])
 
     for url in args['urls']:
         if args['crawl'] or args['crawl_all']:
