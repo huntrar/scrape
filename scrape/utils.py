@@ -167,7 +167,31 @@ def get_out_filename(url, domain=None):
 
     if tail_url:
         if '/' in tail_url:
-            tail_url = [x for x in tail_url.split('/') if x][-1]
+            split_tail = [x for x in tail_url.split('/') if x]
+            tail_url = split_tail[-1]
+
+        ''' Keep length of return string below or equal to max_len '''
+        max_len = 24
+        if domain:
+            max_len -= (len(domain) + 1)
+        if len(tail_url) > max_len:
+            if '-' in tail_url:
+                split_tail = [x for x in tail_url.split('-') if x]
+                tail_url = split_tail.pop(0)
+                if len(tail_url) > max_len:
+                    tail_url = tail_url[:max_len]
+                else:
+                    ''' Add as many tail pieces that can fit '''
+                    tail_len = 0
+                    for tail in split_tail:
+                        tail_len += len(tail)
+                        if tail_len <= max_len:
+                            tail_url += '-' + tail
+                        else:
+                            break
+            else:
+                tail_url = tail_url[:max_len]
+
         if not domain:
             return tail_url
         return domain + '-' + tail_url
