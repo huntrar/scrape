@@ -317,9 +317,9 @@ def get_single_out_name(args):
 def write_single_file(args, base_dir):
     ''' Write to a single output file and/or subdirectory '''
     file_types = []
+    file_names = []
     if args['html'] and args['urls']:
         file_types.append('urls')
-        file_names = []
 
         ''' Create a single directory to store HTML files in '''
         domain = args['domains'][0]

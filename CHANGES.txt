@@ -1,3 +1,8 @@
+0.5.5
+------
+
+ - fixed UnboundLocalError in write_single_file
+
 0.5.4
 ------
 
