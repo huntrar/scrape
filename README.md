@@ -2,7 +2,7 @@
 
 ## a command-line web scraping tool
 
-scrape extracts and filters web pages or local HTML/text files using regex keywords and tag attributes. It supports cross-domain web traversal and data consolidation to text, pdf, or a subdirectory containing HTML.
+scrape is a rule-based web crawler and content extractor which makes web scraping easier than ever. It allows for highly specific queries which make use of regular expressions and the XPath language. Extracted content may be saved and consolidated to text, pdf, or plain HTML.
 
 ## Installation
     pip install scrape
@@ -23,13 +23,13 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
                      [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
                      [-ht] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-p] [-q] [-s]
-                     [-t] [-v]
-                     [query [query ...]]
+                     [-t] [-v] [-x [XPATH]]
+                     [QUERY [QUERY ...]]
     
     a command-line web scraping tool
     
     positional arguments:
-      query                 URLs/files to scrape
+      QUERY                 URL's/files to scrape
     
     optional arguments:
       -h, --help            show this help message and exit
@@ -52,6 +52,8 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -s, --single          save to a single file
       -t, --text            write files as text (default)
       -v, --version         display current version
+      -x [XPATH], --xpath [XPATH]
+                            filter HTML using XPath
 
 ## Author
 * Hunter Hammond (huntrar@gmail.com)
@@ -62,6 +64,6 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 * To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
 * Crawling can be stopped by Ctrl-C or alternatively by setting the number of pages or links to be crawled using --maxpages and --maxlinks. A page may contain zero or many links to more pages.
-* Filtering text is done by entering one or more regexps to --filter.
-* You may specify specific tag attributes to extract from the page using --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
+* Filtering HTML can be done using --xpath, while filtering text is done by entering one or more regexps to --filter.
+* If you only want to specify specific tag attributes to extract rather than an entire XPath, use --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
 * Multiple files/URL's are saved to multiple output files/directories by default. To consolidate them, use the --single flag.

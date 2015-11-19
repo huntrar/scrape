@@ -1,3 +1,9 @@
+0.5.8
+------
+
+- can now parse HTML using XPath and save to all formats
+- remove carriage returns in scraped text files
+
 0.5.7
 ------
 

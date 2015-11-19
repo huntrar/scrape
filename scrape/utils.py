@@ -121,29 +121,56 @@ def clean_attr(attr):
     return None
 
 
-def parse_text(in_file, filter_words=None, attributes=None, filter_html=True):
-    ''' Filter text using keywords and attributes '''
-    if attributes:
+def parse_html(in_file, xpath):
+    ''' Filter HTML using XPath '''
+    if not isinstance(in_file, lh.HtmlElement):
+        in_file = lh.fromstring(in_file)
+
+    in_file = in_file.xpath(xpath)
+    if not in_file:
+        raise ValueError('XPath {0} returned no results.'.format(xpath))
+    return in_file
+
+
+def parse_text(in_file, xpath=None, filter_words=None, attributes=None):
+    ''' Filter text using XPath, regex keywords, and tag attributes '''
+    in_files = []
+    text = []
+    if xpath is not None:
+        in_file = parse_html(in_file, xpath)
+
+        if isinstance(in_file, list):
+            if isinstance(in_file[0], str):
+                text = [line + '\n' for line in in_file]
+            else:
+                in_files = list(in_file)
+        elif isinstance(in_file, str):
+            text = [in_file]
+        else:
+            in_files = [in_file]
+
+    if attributes is not None:
         attributes = [clean_attr(x) for x in attributes]
         attributes = [x for x in attributes if x]
     else:
         attributes = ['text()']
 
-    text = []
-    for attr in attributes:
-        if filter_html:
-            new_text = in_file.xpath('//*[not(self::script) and \
-                                  not(self::style)]/{0}'.format(attr))
-        else:
-            new_text = [x for x in re.split('(\n)', in_file) if x]
+    if not text:
+        for attr in attributes:
+            for in_file in in_files:
+                if isinstance(in_file, lh.HtmlElement):
+                    new_text = in_file.xpath('//*[not(self::script) and \
+                                          not(self::style)]/{0}'.format(attr))
+                else:
+                    new_text = [x for x in re.split('(\n)', in_file) if x]
+                text += new_text
 
-        if filter_words:
-            new_text = filter_re(new_text, filter_words)
+    if filter_words is not None:
+        text = filter_re(text, filter_words)
 
-        text += new_text
-
+    clean_text = [line.replace('\r', '') for line in text]
     return [''.join(x for x in line if x in string.printable)
-            for line in text]
+            for line in clean_text if line]
 
 
 def get_domain(url):
@@ -277,7 +304,7 @@ def get_num_part_files():
     return num_parts
 
 
-def write_part_file(html, part_num=None):
+def write_part_file(args, html, part_num=None):
     ''' Write PART.html files to disk '''
     if part_num is None:
         part_num = get_num_part_files() + 1
@@ -286,9 +313,30 @@ def write_part_file(html, part_num=None):
     if type(html) == bytes:
         html = html.decode('ascii', 'ignore')
 
+    ''' Parse HTML if XPath entered '''
+    if args['xpath']:
+        html = parse_html(html, args['xpath'])
+        if isinstance(html, list):
+            if not isinstance(html[0], lh.HtmlElement):
+                raise ValueError('XPath should return an HtmlElement object.')
+        else:
+            if not isinstance(html, lh.HtmlElement):
+                raise ValueError('XPath should return an HtmlElement object.')
+
     f_name = 'PART{0}.html'.format(part_num)
     with open(f_name, 'w') as f:
-        f.write(html)
+        if isinstance(html, list) and html:
+            if isinstance(html[0], lh.HtmlElement):
+                for elem in html:
+                    f.write(lh.tostring(elem))
+            else:
+                for line in html:
+                    f.write(line)
+        else:
+            if isinstance(html, lh.HtmlElement):
+                f.write(lh.tostring(html))
+            else:
+                f.write(html)
 
 
 def get_part_filenames(num_parts=None):

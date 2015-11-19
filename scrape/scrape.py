@@ -34,8 +34,8 @@ def get_parser():
     ''' Parse command-line arguments using argparse library '''
     parser = argp.ArgumentParser(
         description='a command-line web scraping tool')
-    parser.add_argument('query', type=str, nargs='*',
-                        help='URLs/files to scrape')
+    parser.add_argument('query', metavar='QUERY', type=str, nargs='*',
+                        help='URL\'s/files to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
                         help='extract text using tag attributes')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
@@ -64,6 +64,8 @@ def get_parser():
                         action='store_true')
     parser.add_argument('-v', '--version', help='display current version',
                         action='store_true')
+    parser.add_argument('-x', '--xpath', type=str, nargs='?',
+                        help='filter HTML using XPath')
     return parser
 
 
@@ -124,7 +126,7 @@ def follow_links(args, uncrawled_links, crawled_links, base_url, domain):
                     '''
                     uncrawled_links.update(links)
                     crawled_links.add(utils.remove_scheme(url))
-                    utils.write_part_file(raw_html, len(crawled_links))
+                    utils.write_part_file(args, raw_html, len(crawled_links))
                     if not args['quiet']:
                         print('Crawled {0} (#{1}).'
                               .format(url, len(crawled_links)))
@@ -165,11 +167,61 @@ def crawl(args, base_url, domain):
         '''
         uncrawled_links.update(links)
         crawled_links.add(utils.remove_scheme(base_url))
-        utils.write_part_file(raw_html, len(crawled_links))
+        utils.write_part_file(args, raw_html, len(crawled_links))
         if not args['quiet']:
             print('Crawled {0} (#{1}).'.format(base_url, len(crawled_links)))
 
         follow_links(args, uncrawled_links, crawled_links, base_url, domain)
+
+
+def pdfkit_convert_xpath(args, in_file_names, out_file_names, options):
+    ''' Filter HTML by XPath before writing to pdf '''
+    if args['multiple']:
+        html = None
+        for i, in_file_name in enumerate(in_file_names):
+            if not args['quiet']:
+                print('Attempting to write to {0}.'
+                      .format(out_file_names[i]))
+            else:
+                options['quiet'] = None
+
+            html = utils.parse_html(next(utils.read_files(in_file_name)),
+                              args['xpath'])
+
+            if isinstance(html, list):
+                if isinstance(html[0], str):
+                    pk.from_string('\n'.join(html), out_file_names[i],
+                                   options=options)
+                else:
+                    pk.from_string('\n'.join(lh.tostring(x) for x in html),
+                                   out_file_names[i], options=options)
+            elif isinstance(html, str):
+                pk.from_string(html, out_file_names[i], options=options)
+            else:
+                pk.from_string(lh.tostring(html), out_file_names[i],
+                               options=options)
+    elif args['single']:
+        if not args['quiet']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(in_file_names), out_file_names[0]))
+        else:
+            options['quiet'] = None
+
+        html = utils.parse_html(next(utils.read_files(in_file_names)),
+                                args['xpath'])
+
+        if isinstance(html, list):
+            if isinstance(html[0], str):
+                pk.from_string('\n'.join(html), out_file_names[0],
+                               options=options)
+            else:
+                pk.from_string('\n'.join(lh.tostring(x) for x in html),
+                               out_file_names[0], options=options)
+        elif isinstance(html, str):
+            pk.from_string(html, out_file_names[0], options=options)
+        else:
+            pk.from_string(lh.tostring(html), out_file_names[0],
+                           options=options)
 
 
 def pdfkit_convert(args, in_file_names, out_file_names):
@@ -183,7 +235,9 @@ def pdfkit_convert(args, in_file_names, out_file_names):
         options['ignore-load-errors'] = None
 
     try:
-        if args['multiple']:
+        if args['xpath']:
+            pdfkit_convert_xpath(args, in_file_names, out_file_names, options)
+        elif args['multiple']:
             for i, in_file_name in enumerate(in_file_names):
                 if not args['quiet']:
                     print('Attempting to write to {0}.'
@@ -242,11 +296,10 @@ def write_to_text(args, in_file_names, out_file_names):
             text = next(utils.read_files(in_file_name))
 
         if html is not None:
-            parsed_text = utils.parse_text(html, args['filter'],
+            parsed_text = utils.parse_text(html, args['xpath'], args['filter'],
                                            args['attributes'])
         elif text is not None:
-            parsed_text = utils.parse_text(text, args['filter'],
-                                           filter_html=False)
+            parsed_text = utils.parse_text(text, args['xpath'], args['filter'])
         else:
             if not args['quiet']:
                 if args['files']:
@@ -337,7 +390,7 @@ def write_single_file(args, base_dir):
         else:
             raw_html = utils.get_raw_html(url)
             if raw_html is not None:
-                utils.write_part_file(raw_html)
+                utils.write_part_file(args, raw_html)
             else:
                 return False
 
@@ -372,7 +425,7 @@ def write_multiple_files(args, base_dir):
         else:
             raw_html = utils.get_raw_html(url)
             if raw_html is not None:
-                utils.write_part_file(raw_html)
+                utils.write_part_file(args, raw_html)
             else:
                 return False
 
