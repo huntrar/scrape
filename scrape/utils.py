@@ -140,14 +140,16 @@ def parse_text(in_file, xpath=None, filter_words=None, attributes=None):
         in_file = parse_html(in_file, xpath)
 
         if isinstance(in_file, list):
-            if isinstance(in_file[0], str):
-                text = [line + '\n' for line in in_file]
-            else:
+            if isinstance(in_file[0], lh.HtmlElement):
                 in_files = list(in_file)
-        elif isinstance(in_file, str):
-            text = [in_file]
-        else:
+            else:
+                text = [line + '\n' for line in in_file]
+        elif isinstance(in_file, lh.HtmlElement):
             in_files = [in_file]
+        else:
+            text = [in_file]
+    else:
+        in_files = [in_file]
 
     if attributes is not None:
         attributes = [clean_attr(x) for x in attributes]

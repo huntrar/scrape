@@ -1,3 +1,8 @@
+0.5.9
+------
+
+- fixed bug where text wouldn't write unless xpath specified
+
 0.5.8
 ------
 
