@@ -55,11 +55,12 @@ class ScrapeTestCase(unittest.TestCase):
         ''' Use first possible entry in query as filename '''
         for arg in self.query:
             if arg in self.html_files or arg in self.text_files:
-                return '.'.join(arg.split('.')[:-1])
+                return ('.'.join(arg.split('.')[:-1])).lower()
             for url in self.urls:
-                if arg in url:
+                if arg.strip('/') in url:
                     domain = utils.get_domain(url)
                     return utils.get_out_filename(url, domain)
+        sys.stderr.write('Failed to construct a single out file name.\n')
         return ''
 
     ''' to_pdf functions require wkhtmltopdf executable to run
