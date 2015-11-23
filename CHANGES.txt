@@ -1,13 +1,19 @@
+0.6.0
+------
+
+ - fixed bug where single out file name wasn't properly constructed
+ - out file names are all returned as lowercase now
+
 0.5.9
 ------
 
-- fixed bug where text wouldn't write unless xpath specified
+ - fixed bug where text wouldn't write unless xpath specified
 
 0.5.8
 ------
 
-- can now parse HTML using XPath and save to all formats
-- remove carriage returns in scraped text files
+ - can now parse HTML using XPath and save to all formats
+ - remove carriage returns in scraped text files
 
 0.5.7
 ------

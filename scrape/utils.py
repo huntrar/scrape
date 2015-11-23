@@ -223,9 +223,9 @@ def get_out_filename(url, domain=None):
 
         if not domain:
             return tail_url
-        return domain + '-' + tail_url
+        return (domain + '-' + tail_url).lower()
     else:
-        return domain
+        return domain.lower()
 
 
 def add_scheme(url):
