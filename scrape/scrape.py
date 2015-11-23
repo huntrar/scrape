@@ -325,7 +325,7 @@ def write_to_text(args, in_file_names, out_file_names):
                     all_text.append('\n')
 
     ''' Write all text to a single output file '''
-    if args['single']:
+    if args['single'] and all_text:
         out_file_name = out_file_names[0] + '.txt'
 
         if not args['quiet']:

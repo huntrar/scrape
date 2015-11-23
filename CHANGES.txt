@@ -1,3 +1,9 @@
+0.6.1
+------
+
+ - remove consecutive whitespace before writing text files
+ - empty text files no longer written
+
 0.6.0
 ------
 

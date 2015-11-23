@@ -170,7 +170,24 @@ def parse_text(in_file, xpath=None, filter_words=None, attributes=None):
     if filter_words is not None:
         text = filter_re(text, filter_words)
 
-    clean_text = [line.replace('\r', '') for line in text]
+    ''' Remove unnecessary whitespace and carriage returns ''' 
+    clean_text = []
+    curr_line = ''
+    while text:
+        curr_line = text.pop(0)
+
+        if text:
+            if not curr_line.strip():
+                ''' Current line is whitespace, add if next line is not '''
+                if text[0].strip():
+                    clean_text.append(curr_line.replace('\r', ''))
+            else:
+                ''' Current line is not whitespace '''
+                clean_text.append(curr_line.replace('\r', ''))
+        else:
+            ''' Add the final line in text if it is not whitespace '''
+            if curr_line.strip():
+                clean_text.append(curr_line.replace('\r', ''))
     return [''.join(x for x in line if x in string.printable)
             for line in clean_text if line]
 
@@ -280,6 +297,8 @@ def remove_file(file_name):
 def write_file(text, file_name):
     ''' Write a file to disk '''
     try:
+        if not text:
+            return False
         with open(file_name, 'a') as f:
             [f.write(line) for line in text if line]
         return True
