@@ -1,3 +1,9 @@
+0.6.2
+------
+
+ - stylistic changes
+ - files are now read in 1K chunks
+
 0.6.1
 ------
 
