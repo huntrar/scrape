@@ -69,8 +69,18 @@ def get_parser():
     return parser
 
 
-def follow_links(args, uncrawled_links, crawled_links, base_url, domain):
-    """Follow links that have not been crawled yet"""
+def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
+    """Follow links that have not been crawled yet
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       uncrawled_links -- links to be crawled (OrderedSet)
+       crawled_links -- links already crawled (set)
+       seed_url -- the first crawled link (str)
+       seed_domain -- the domain of the seed URL (str)
+
+       HTML results are written to PART(#).html files.
+    """
     crawled_ct = 1
     link_cache = []
     try:
@@ -81,39 +91,33 @@ def follow_links(args, uncrawled_links, crawled_links, base_url, domain):
                     (args['maxpages'] and crawled_ct >= args['maxpages'])):
                 break
 
-            # Find the next uncrawled link and crawl it
             url = uncrawled_links.pop(last=False)
-
             # Compare scheme-less URLs to prevent http(s):// dupes
             if (utils.check_scheme(url) and
                     utils.remove_scheme(url) not in crawled_links):
                 raw_html = utils.get_raw_html(url)
                 if raw_html is not None:
                     html = lh.fromstring(raw_html)
-                    # Compute a hash of the page and check if it is in
-                    #the page cache
+                    # Compute a hash of the page and check if it is in cache
                     page_text = utils.parse_text(html)
                     link_hash = utils.hash_text(''.join(page_text))
-                    # Ignore page if found in cache, otherwise add it
                     if link_hash in link_cache:
                         continue
                     utils.cache_link(link_cache, link_hash, LINK_CACHE_SIZE)
 
-                    # Find and clean new links available on page and add to the
-                    # crawled pages count
-                    links = [utils.clean_url(u, base_url) for u in
+                    # Find new links and remove fragments/append base url
+                    # if necessary
+                    links = [utils.clean_url(u, seed_url) for u in
                              html.xpath('//a/@href')]
                     crawled_ct += 1
-                    # Check for keywords to follow links by
+                    # Domain may be restricted to the seed domain
+                    if not args['nonstrict'] and seed_domain in url:
+                        links = [x for x in links if seed_domain in x]
+                    # Links may be filtered by regex keywords
                     if args['crawl']:
                         for keyword in args['crawl']:
                             links = utils.re_filter(links, keyword)
-                    # Domain may be restricted to the seed domain
-                    if not args['nonstrict'] and domain in url:
-                        links = [x for x in links if domain in x]
 
-                    # write_part_file creates a temporary PART.html file to be
-                    # processed in write_files()
                     uncrawled_links.update(links)
                     crawled_links.add(utils.remove_scheme(url))
                     utils.write_part_file(args, raw_html, len(crawled_links))
@@ -128,39 +132,50 @@ def follow_links(args, uncrawled_links, crawled_links, base_url, domain):
         pass
 
 
-def crawl(args, base_url, domain):
-    """Find links given a seed URL and follow them breadth-first"""
+def crawl(args, seed_url, seed_domain):
+    """Find links given a seed URL and follow them breadth-first
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       seed_url -- the first link to crawl (str)
+       seed_domain -- the domain of the seed URL (str)
+    """
     crawled_links = set()
     uncrawled_links = OrderedSet()
-
-    raw_html = utils.get_raw_html(base_url)
+    raw_html = utils.get_raw_html(seed_url)
     if raw_html is not None:
         html = lh.fromstring(raw_html)
-
-        # Remove URL fragments and append base url if domain is missing
-        links = [utils.clean_url(u, base_url) for u
+        # Find new links and remove fragments/append base url if necessary
+        links = [utils.clean_url(u, seed_url) for u
                  in html.xpath('//a/@href')]
         # Domain may be restricted to the seed domain
         if not args['nonstrict']:
-            links = [x for x in links if domain in x]
-        # Links may have keywords to follow them by
+            links = [x for x in links if seed_domain in x]
+        # Links may be filtered by regex keywords
         if args['crawl']:
             for keyword in args['crawl']:
                 links = [x for x in links if keyword in x]
 
-        # write_part_file creates a temporary PART.html file to be
-        # processed in write_files()
         uncrawled_links.update(links)
-        crawled_links.add(utils.remove_scheme(base_url))
+        crawled_links.add(utils.remove_scheme(seed_url))
         utils.write_part_file(args, raw_html, len(crawled_links))
         if not args['quiet']:
-            print('Crawled {0} (#{1}).'.format(base_url, len(crawled_links)))
-
-        follow_links(args, uncrawled_links, crawled_links, base_url, domain)
+            print('Crawled {0} (#{1}).'.format(seed_url, len(crawled_links)))
+        follow_links(args, uncrawled_links, crawled_links, seed_url,
+                     seed_domain)
 
 
 def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
-    """Filter HTML by XPath before writing to pdf"""
+    """Filter HTML by XPath before writing to pdf
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of input HTML files (list)
+       outfilenames -- names of output PDF files (list)
+       options -- pdfkit options (dict)
+
+        
+    """
     if args['multiple']:
         html = None
         for i, infilename in enumerate(infilenames):
@@ -170,9 +185,8 @@ def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
             else:
                 options['quiet'] = None
 
-            html = utils.parse_html(next(utils.read_files(infilename)),
+            html = utils.parse_html(utils.read_files(infilename),
                                     args['xpath'])
-
             if isinstance(html, list):
                 if isinstance(html[0], str):
                     pk.from_string('\n'.join(html), outfilenames[i],
@@ -192,7 +206,7 @@ def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
         else:
             options['quiet'] = None
 
-        html = utils.parse_html(next(utils.read_files(infilenames)),
+        html = utils.parse_html(utils.read_files(infilenames),
                                 args['xpath'])
 
         if isinstance(html, list):
@@ -240,7 +254,6 @@ def pdfkit_convert(args, infilenames, outfilenames):
             pk.from_file(infilenames, outfilenames[0], options=options)
     except (KeyboardInterrupt, Exception):
         if args['urls']:
-            """Remove PART.html files"""
             utils.remove_part_files()
         raise
 
@@ -270,10 +283,10 @@ def write_to_text(args, infilenames, outfilenames):
         all_text = []
 
     for i, (infilename, outfilename) in enumerate(zip(infilenames,
-                                                        outfilenames)):
+                                                      outfilenames)):
         if infilename.endswith('.html'):
             # Convert HTML to lxml object for content parsing
-            html = lh.fromstring(next(utils.read_files(infilename)))
+            html = lh.fromstring(utils.read_files(infilename))
             text = None
         else:
             html = None
