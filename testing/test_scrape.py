@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-''' Unit tests for scrape '''
+"""Unit tests for scrape"""
 
 import os
 import shutil
@@ -39,7 +39,7 @@ class ScrapeTestCase(unittest.TestCase):
             self.assertTrue(utils.remove_file(filename))
 
     def delete_subdir(self, domain):
-        ''' Delete subdirectory containing HTML files if no other data in it '''
+        """Delete subdirectory containing HTML files if no other data in it"""
         subdir_path = '{0}/{1}'.format(os.getcwd(), domain)
         files = os.listdir(subdir_path)
         files_to_rm = [x for x in files if x.startswith('PART')
@@ -52,7 +52,7 @@ class ScrapeTestCase(unittest.TestCase):
             shutil.rmtree(subdir_path)
 
     def get_single_outfilename(self):
-        ''' Use first possible entry in query as filename '''
+        """Use first possible entry in query as filename"""
         for arg in self.query:
             if arg in self.html_files or arg in self.text_files:
                 return ('.'.join(arg.split('.')[:-1])).lower()
@@ -63,7 +63,7 @@ class ScrapeTestCase(unittest.TestCase):
         sys.stderr.write('Failed to construct a single out filename.\n')
         return ''
 
-    ''' to_pdf functions require wkhtmltopdf executable to run
+    """to_pdf functions require wkhtmltopdf executable to run
     def test_query_to_multi_pdf(self):
         self.call_scrape(self.query, 'pdf', 'multiple')
         for filename in self.html_files + self.text_files:
@@ -101,7 +101,7 @@ class ScrapeTestCase(unittest.TestCase):
         # Assert new files have been created, then assert their deletion
         for outfilename in outfilenames:
             self.assert_exists_and_rm(outfilename)
-    '''
+   """
 
     def test_query_to_multi_text(self):
         self.call_scrape(self.query, 'text', 'multiple')
@@ -129,7 +129,7 @@ class ScrapeTestCase(unittest.TestCase):
         self.call_scrape(self.html_files, 'text')
         outfilenames = [x.replace('.html', '.txt') for x in self.html_files]
         
-        ''' Assert new files have been created, then assert their deletion '''
+        # Assert new files have been created, then assert their deletion
         for outfilename in outfilenames:
             self.assert_exists_and_rm(outfilename)
 

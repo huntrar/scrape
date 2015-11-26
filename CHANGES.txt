@@ -1,3 +1,12 @@
+0.6.3
+------
+
+ - began process of making docstrings conform to pep257
+ - increased size of link cache from 10 to 100
+ - remove the newline at start of text files
+ - add newlines between lines filtered by regex
+ - remove_whitespace now removes newlines that are 3 in a row or more
+
 0.6.2
 ------
 
