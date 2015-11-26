@@ -42,7 +42,7 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
 
 
 def get_proxies():
-    ''' Get available proxies to use with requests library '''
+    """Get available proxies to use with requests library"""
     proxies = getproxies()
     filtered_proxies = {}
     for key, value in proxies.items():
@@ -55,7 +55,7 @@ def get_proxies():
 
 
 def get_html(url):
-    ''' Get HTML response as an lxml.html.HtmlElement object '''
+    """Get HTML response as an lxml.html.HtmlElement object"""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
@@ -67,7 +67,7 @@ def get_html(url):
 
 
 def get_raw_html(url):
-    ''' Get HTML response as a str object '''
+    """Get HTML response as a str object"""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
@@ -79,37 +79,40 @@ def get_raw_html(url):
 
 
 def hash_text(text):
-    ''' Return MD5 hash '''
+    """Return MD5 hash"""
     md5 = hashlib.md5()
     md5.update(text)
     return md5.hexdigest()
 
 
 def cache_link(link_cache, link_hash, cache_size):
-    ''' Add a link to cache '''
+    """Add a link to cache"""
     link_cache.append(link_hash)
     if len(link_cache) > cache_size:
         link_cache.pop(0)
 
 
-def filter_re(lines, regexps):
-    ''' Filter text using regular expressions '''
+def re_filter(text, regexps):
+    """Filter text using regular expressions"""
     if regexps:
         regexps = [re.compile(x) for x in regexps]
-        matched_lines = []
-        for line in lines:
+        matched_text = []
+        for line in text:
             for regexp in regexps:
                 found = regexp.search(line)
                 if found:
                     group = found.group()
                     if group:
-                        matched_lines.append(line)
-        return matched_lines
-    return lines
+                        matched_text.append(line)
+                        matched_text.append('\n')
+        if matched_text:
+            # Last line is an unnecessary newline
+            return matched_text[:-1]
+    return text
 
 
 def clean_attr(attr):
-    ''' Append @ to attributes and resolve text -> text() for XPath '''
+    """Append @ to attributes and resolve text -> text() for XPath"""
     if attr:
         if 'text' in attr:
             return 'text()'
@@ -122,7 +125,7 @@ def clean_attr(attr):
 
 
 def parse_html(infile, xpath):
-    ''' Filter HTML using XPath '''
+    """Filter HTML using XPath"""
     if not isinstance(infile, lh.HtmlElement):
         infile = lh.fromstring(infile)
 
@@ -132,13 +135,57 @@ def parse_html(infile, xpath):
     return infile
 
 
+def remove_whitespace(text):
+    """Remove carriage returns and extraneous spaces and newlines
+    
+       Extraneous spaces are considered two or more spaces in a row
+       Extraneous newlines are considered three or more newlines in a row
+    """
+    stripped_text = []
+    curr_line = ''
+    while text:
+        if not curr_line:
+            # Find the first line that is not whitespace and add it
+            curr_line = text.pop(0)
+            while curr_line == '\n' and text:
+                curr_line = text.pop(0)
+            if curr_line != '\n':
+                stripped_text.append(curr_line)
+        else:
+            curr_line = text.pop(0)
+            if text:
+                if curr_line != '\n':
+                    stripped_text.append(curr_line)
+                else:
+                    # Add the current line either if the following line is not
+                    # newline or if the second following line is not newline
+                    if text[0] == '\n':
+                        if len(text) > 1:
+                            if text[1] != '\n':
+                                stripped_text.append(curr_line)
+                    else:
+                        stripped_text.append(curr_line)
+            else:
+                # Final line in text, add if it is not whitespace
+                if curr_line != '\n':
+                    stripped_text.append(curr_line)
+
+    clean_text = []
+    for line in stripped_text:
+        # Reduce multiple spaces to single spaces
+        while '  ' in line:
+            line = line.replace('  ', ' ')
+        # Remove carriage returns
+        clean_text.append(line.replace('\r', ''))
+    return clean_text
+
+
 def parse_text(infile, xpath=None, filter_words=None, attributes=None):
-    ''' Filter text using XPath, regex keywords, and tag attributes '''
+    """Filter text using XPath, regex keywords, and tag attributes"""
     infiles = []
     text = []
     if xpath is not None:
         infile = parse_html(infile, xpath)
-
         if isinstance(infile, list):
             if isinstance(infile[0], lh.HtmlElement):
                 infiles = list(infile)
@@ -164,36 +211,18 @@ def parse_text(infile, xpath=None, filter_words=None, attributes=None):
                     new_text = infile.xpath('//*[not(self::script) and \
                                           not(self::style)]/{0}'.format(attr))
                 else:
+                    # re split preserves delimeters place in the list
                     new_text = [x for x in re.split('(\n)', infile) if x]
                 text += new_text
 
     if filter_words is not None:
-        text = filter_re(text, filter_words)
-
-    ''' Remove unnecessary whitespace and carriage returns '''
-    clean_text = []
-    curr_line = ''
-    while text:
-        curr_line = text.pop(0)
-
-        if text:
-            if not curr_line.strip():
-                ''' Current line is whitespace, add if next line is not '''
-                if text[0].strip():
-                    clean_text.append(curr_line.replace('\r', ''))
-            else:
-                ''' Current line is not whitespace '''
-                clean_text.append(curr_line.replace('\r', ''))
-        else:
-            ''' Add the final line in text if it is not whitespace '''
-            if curr_line.strip():
-                clean_text.append(curr_line.replace('\r', ''))
+        text = re_filter(text, filter_words)
     return [''.join(x for x in line if x in string.printable)
-            for line in clean_text if line]
+            for line in remove_whitespace(text) if line]
 
 
 def get_domain(url):
-    ''' Get the domain of a URL '''
+    """Get the domain of a URL"""
     domain = '{url.netloc}'.format(url=urlparse(url))
     if '.' in domain:
         return domain.split('.')[-2]
@@ -201,7 +230,7 @@ def get_domain(url):
 
 
 def get_outfilename(url, domain=None):
-    ''' Construct the output filename from partial domain and end of path '''
+    """Construct the output filename from partial domain and end of path"""
     if domain is None:
         domain = get_domain(url)
 
@@ -216,7 +245,7 @@ def get_outfilename(url, domain=None):
             tail_pieces = [x for x in tail_url.split('/') if x]
             tail_url = tail_pieces[-1]
 
-        ''' Keep length of return string below or equal to max_len '''
+        # Keep length of return string below or equal to max_len
         max_len = 24
         if domain:
             max_len -= (len(domain) + 1)
@@ -227,7 +256,7 @@ def get_outfilename(url, domain=None):
                 if len(tail_url) > max_len:
                     tail_url = tail_url[:max_len]
                 else:
-                    ''' Add as many tail pieces that can fit '''
+                    # Add as many tail pieces that can fit
                     tail_len = 0
                     for piece in tail_pieces:
                         tail_len += len(piece)
@@ -246,39 +275,35 @@ def get_outfilename(url, domain=None):
 
 
 def add_scheme(url):
-    ''' Add scheme to URL '''
+    """Add scheme to URL"""
     return 'http://{0}'.format(url)
 
 
 def remove_scheme(url):
-    ''' Remove scheme from URL '''
+    """Remove scheme from URL"""
     return url.replace('http://', '').replace('https://', '')
 
 
 def check_scheme(url):
-    ''' Check URL for a scheme '''
+    """Check URL for a scheme"""
     if url and (url.startswith('http://') or url.startswith('https://')):
         return True
     return False
 
 
 def clean_url(url, base_url):
-    ''' Remove URL fragments and add base URL if necessary '''
+    """Remove URL fragments and add base URL if necessary"""
     parsed_url = urlparse(url)
-
-    ''' Remove URL fragments '''
     fragment = '{url.fragment}'.format(url=parsed_url)
     if fragment:
         url = url.split(fragment)[0]
-
-    ''' If no domain was found in URL then add the base URL to it '''
     if not '{url.netloc}'.format(url=parsed_url):
         url = urljoin(base_url, url)
     return url.rstrip(string.punctuation)
 
 
 def add_url_ext(url):
-    ''' Add .com to url '''
+    """Add .com to url"""
     url = url.rstrip('/')
     if '.' not in url:
         url = '{0}.com'.format(url)
@@ -286,7 +311,7 @@ def add_url_ext(url):
 
 
 def remove_file(filename):
-    ''' Remove a file from disk '''
+    """Remove a file from disk"""
     try:
         os.remove(filename)
         return True
@@ -295,7 +320,7 @@ def remove_file(filename):
 
 
 def write_file(text, filename):
-    ''' Write a file to disk '''
+    """Write a file to disk"""
     try:
         if not text:
             return False
@@ -310,7 +335,7 @@ def write_file(text, filename):
 
 
 def mkdir_and_cd(dirname):
-    ''' Change directory and/or create it if necessary '''
+    """Change directory and/or create it if necessary"""
     if not os.path.exists(dirname):
         os.makedirs(dirname)
         os.chdir(dirname)
@@ -319,7 +344,7 @@ def mkdir_and_cd(dirname):
 
 
 def get_num_part_files():
-    ''' Get the number of PART.html files currently saved to disk '''
+    """Get the number of PART.html files currently saved to disk"""
     num_parts = 0
     for filename in os.listdir(os.getcwd()):
         if filename.startswith('PART') and filename.endswith('.html'):
@@ -328,15 +353,15 @@ def get_num_part_files():
 
 
 def write_part_file(args, html, part_num=None):
-    ''' Write PART.html files to disk '''
+    """Write PART.html files to disk"""
     if part_num is None:
         part_num = get_num_part_files() + 1
 
-    ''' Decode bytes to str if necessary for Python 3 '''
+    # Decode bytes to str if necessary for Python 3
     if type(html) == bytes:
         html = html.decode('ascii', 'ignore')
 
-    ''' Parse HTML if XPath entered '''
+    # Parse HTML if XPath entered
     if args['xpath']:
         html = parse_html(html, args['xpath'])
         if isinstance(html, list):
@@ -363,40 +388,30 @@ def write_part_file(args, html, part_num=None):
 
 
 def get_part_filenames(num_parts=None):
-    ''' Get numbered PART.html filenames '''
+    """Get numbered PART.html filenames"""
     if num_parts is None:
         num_parts = get_num_part_files()
-
     return ['PART{0}.html'.format(i) for i in range(1, num_parts + 1)]
 
 
-def read_files(filenames, chunk_size=1024):
-    """Generator function to read a file in chunks.
+def read_files(filenames):
+    """Read a file into memory.
 
         Keyword arguments:
-        filenames -- name of file to read in
-        chunk_size -- size of file chunks in bytes (default 1024)
+        filenames -- name of files to read in
     """
     data = ''
     if isinstance(filenames, list):
         for filename in filenames:
             with open(filename, 'r') as f:
-                while True:
-                    data = f.read(chunk_size)
-                    if not data:
-                        break
-                    yield data
+                return f.read()
     else:
         with open(filenames, 'r') as f:
-            while True:
-                data = f.read(chunk_size)
-                if not data:
-                    break
-                yield data
+            return f.read()
 
 
 def remove_part_files(num_parts=None):
-    ''' Remove PART.html files from disk '''
+    """Remove PART.html files from disk"""
     filenames = get_part_filenames(num_parts)
     for filename in filenames:
         remove_file(filename)
