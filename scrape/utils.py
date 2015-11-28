@@ -137,9 +137,9 @@ def parse_html(infile, xpath):
 
 def remove_whitespace(text):
     """Remove carriage returns and extraneous spaces and newlines
-    
-       Extraneous spaces are considered two or more spaces in a row
-       Extraneous newlines are considered three or more newlines in a row
+
+       Extraneous spaces are considered two or more spaces in a row.
+       Extraneous newlines are considered three or more newlines in a row.
     """
     stripped_text = []
     curr_line = ''
@@ -181,7 +181,14 @@ def remove_whitespace(text):
 
 
 def parse_text(infile, xpath=None, filter_words=None, attributes=None):
-    """Filter text using XPath, regex keywords, and tag attributes"""
+    """Filter text using XPath, regex keywords, and tag attributes
+    
+       Keyword arguments:
+       infile -- HTML or text content to parse (list)
+       xpath -- an XPath expression (str)
+       filter_words -- regex keywords (list)
+       attributes -- HTML tag attributes (list)
+    """
     infiles = []
     text = []
     if xpath is not None:
@@ -208,10 +215,10 @@ def parse_text(infile, xpath=None, filter_words=None, attributes=None):
         for attr in attributes:
             for infile in infiles:
                 if isinstance(infile, lh.HtmlElement):
-                    new_text = infile.xpath('//*[not(self::script) and \
-                                          not(self::style)]/{0}'.format(attr))
+                    new_text = infile.xpath('//*[not(self::script) and '
+                                          'not(self::style)]/{0}'.format(attr))
                 else:
-                    # re split preserves delimeters place in the list
+                    # re.split preserves delimeters place in the list
                     new_text = [x for x in re.split('(\n)', infile) if x]
                 text += new_text
 
@@ -353,7 +360,13 @@ def get_num_part_files():
 
 
 def write_part_file(args, html, part_num=None):
-    """Write PART.html files to disk"""
+    """Write PART.html files to disk
+    
+       Keyword arguments:
+       args -- program arguments (dict)
+       html -- HTML file content (list)
+       part_num -- PART(#).html file number (default: None)
+    """
     if part_num is None:
         part_num = get_num_part_files() + 1
 
@@ -395,11 +408,7 @@ def get_part_filenames(num_parts=None):
 
 
 def read_files(filenames):
-    """Read a file into memory.
-
-        Keyword arguments:
-        filenames -- name of files to read in
-    """
+    """Read a file into memory."""
     data = ''
     if isinstance(filenames, list):
         for filename in filenames:
@@ -411,7 +420,7 @@ def read_files(filenames):
 
 
 def remove_part_files(num_parts=None):
-    """Remove PART.html files from disk"""
+    """Remove PART(#).html files from disk"""
     filenames = get_part_filenames(num_parts)
     for filename in filenames:
         remove_file(filename)

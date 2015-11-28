@@ -31,7 +31,7 @@ LINK_CACHE_SIZE = 100
 
 
 def get_parser():
-    """Parse command-line arguments using argparse library"""
+    """Parse command-line arguments"""
     parser = argp.ArgumentParser(
         description='a command-line web scraping tool')
     parser.add_argument('query', metavar='QUERY', type=str, nargs='*',
@@ -79,7 +79,7 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
        seed_url -- the first crawled link (str)
        seed_domain -- the domain of the seed URL (str)
 
-       HTML results are written to PART(#).html files.
+       Retrieve HTML from links and write them to PART(#).html files.
     """
     crawled_ct = 1
     link_cache = []
@@ -139,6 +139,8 @@ def crawl(args, seed_url, seed_domain):
        args -- program arguments (dict)
        seed_url -- the first link to crawl (str)
        seed_domain -- the domain of the seed URL (str)
+
+       Initialize crawled/uncrawled links by exctracting links from a seed URL.
     """
     crawled_links = set()
     uncrawled_links = OrderedSet()
@@ -166,15 +168,13 @@ def crawl(args, seed_url, seed_domain):
 
 
 def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
-    """Filter HTML by XPath before writing to pdf
+    """Filter HTML files by XPath and then convert to PDF using pdfkit
 
        Keyword arguments:
        args -- program arguments (dict)
-       infilenames -- names of input HTML files (list)
+       infilenames -- names of input files (list)
        outfilenames -- names of output PDF files (list)
        options -- pdfkit options (dict)
-
-        
     """
     if args['multiple']:
         html = None
@@ -208,7 +208,6 @@ def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
 
         html = utils.parse_html(utils.read_files(infilenames),
                                 args['xpath'])
-
         if isinstance(html, list):
             if isinstance(html[0], str):
                 pk.from_string('\n'.join(html), outfilenames[0],
@@ -224,9 +223,14 @@ def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
 
 
 def pdfkit_convert(args, infilenames, outfilenames):
-    """Attempt file conversion to pdf using pdfkit"""
-    options = {}
+    """Convert files to PDF using pdfkit
 
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of input files (list)
+       outfilenames -- names of output PDF files (list)
+    """
+    options = {}
     # Only ignore errors if there is more than one page
     # This prevents an empty write if an error occurs
     if len(infilenames) > 1:
@@ -242,7 +246,6 @@ def pdfkit_convert(args, infilenames, outfilenames):
                           .format(outfilenames[i]))
                 else:
                     options['quiet'] = None
-
                 pk.from_file(infilename, outfilenames[i], options=options)
         elif args['single']:
             if not args['quiet']:
@@ -250,7 +253,6 @@ def pdfkit_convert(args, infilenames, outfilenames):
                       .format(len(infilenames), outfilenames[0]))
             else:
                 options['quiet'] = None
-
             pk.from_file(infilenames, outfilenames[0], options=options)
     except (KeyboardInterrupt, Exception):
         if args['urls']:
@@ -259,7 +261,15 @@ def pdfkit_convert(args, infilenames, outfilenames):
 
 
 def write_to_pdf(args, infilenames, outfilenames):
-    """Write files to pdf"""
+    """Write files to PDF
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of input files (list)
+       outfilenames -- names of output PDF files (list)
+
+       Convert files to PDF using pdfkit.
+    """
     if args['multiple']:
         pdf_filenames = [x + '.pdf' for x in outfilenames]
         outfilenames = pdf_filenames
@@ -273,7 +283,15 @@ def write_to_pdf(args, infilenames, outfilenames):
 
 
 def write_to_text(args, infilenames, outfilenames):
-    """Write files to text"""
+    """Write files to text
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of input files (list)
+       outfilenames -- names of output text files (list)
+
+       Text is parsed using XPath, regexes, or tag attributes prior to writing.
+    """
     if args['multiple']:
         # Write input files to multiple text files
         txt_filenames = [x + '.txt' for x in outfilenames]
@@ -316,7 +334,6 @@ def write_to_text(args, infilenames, outfilenames):
                 utils.write_file(parsed_text, outfilename)
             elif args['single']:
                 all_text += parsed_text
-
                 # Newline added between multiple files being aggregated
                 if len(infilenames) > 1 and i < len(infilenames) - 1:
                     all_text.append('\n')
@@ -324,7 +341,6 @@ def write_to_text(args, infilenames, outfilenames):
     # Write all text to a single output file
     if args['single'] and all_text:
         outfilename = outfilenames[0] + '.txt'
-
         if not args['quiet']:
             print('Attempting to write {0} page(s) to {1}.'
                   .format(len(infilenames), outfilename))
@@ -332,21 +348,29 @@ def write_to_text(args, infilenames, outfilenames):
         utils.write_file(all_text, outfilename)
 
 
-def write_files(args, filenames, outfilenames, filetypes):
-    """Write scraped pages or user-inputted files to text or pdf"""
-    infilenames = []
-    if 'files' in filetypes:
-        infilenames += filenames
+def write_files(args, infilenames, outfilenames, filetypes):
+    """Write scraped or local files to text or PDF
+    
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of user-inputted files (list)
+       outfilenames -- names of output PDF files (list)
+       filetypes -- types of files in infilenames (list)
 
+       File types are 'files' for local files, or 'urls' for scraped files.
+       Remove PART(#).html files after conversion unless otherwise specified.
+       """
+    filenames = []
+    if 'files' in filetypes:
+        filenames += infilenames
     if 'urls' in filetypes:
         # Scraped URLs are downloaded as PART.html files
-        infilenames += utils.get_part_filenames()
+        filenames += utils.get_part_filenames()
 
     if args['pdf']:
-        write_to_pdf(args, infilenames, outfilenames)
+        write_to_pdf(args, filenames, outfilenames)
     elif args['text']:
-        write_to_text(args, infilenames, outfilenames)
-
+        write_to_text(args, filenames, outfilenames)
     if 'urls' in filetypes and not args['html']:
         utils.remove_part_files()
 
@@ -493,11 +517,9 @@ def command_line_runner():
     """Handle command-line interaction"""
     parser = get_parser()
     args = vars(parser.parse_args())
-
     if args['version']:
         print(__version__)
         return
-
     if not args['query']:
         parser.print_help()
         return
@@ -513,7 +535,6 @@ def command_line_runner():
         except KeyboardInterrupt:
             return
         args[filetype] = True
-
     scrape(args)
 
 
