@@ -136,48 +136,56 @@ def parse_html(infile, xpath):
 
 
 def remove_whitespace(text):
-    """Remove carriage returns and extraneous spaces and newlines
+    """Remove unnecessary whitespace while keeping logical structure
 
-       Extraneous spaces are considered two or more spaces in a row.
-       Extraneous newlines are considered three or more newlines in a row.
+       Keyword arguments:
+       text -- text to remove whitespace from (list)
+
+       The goal is to remove unnecessary whitespace while retaining logical
+       structure such as paragraph separation.
+       We also want to remove unnecessary whitespace between words on a line.
+       Removes whitespace at the start and end of the text.
     """
-    stripped_text = []
+    clean_text = []
     curr_line = ''
+    # Remove any newlines that follow two lines of whitespace consecutively
+    # Also remove whitespace at start and end of text
     while text:
         if not curr_line:
             # Find the first line that is not whitespace and add it
             curr_line = text.pop(0)
-            while curr_line == '\n' and text:
+            while not curr_line.strip() and text:
                 curr_line = text.pop(0)
-            if curr_line != '\n':
-                stripped_text.append(curr_line)
+            if curr_line.strip():
+                clean_text.append(curr_line)
         else:
+            # Filter the rest of the lines
             curr_line = text.pop(0)
             if text:
-                if curr_line != '\n':
-                    stripped_text.append(curr_line)
+                if curr_line.strip():
+                    clean_text.append(curr_line)
                 else:
-                    # Add the current line either if the following line is not
-                    # newline or if the second following line is not newline
-                    if text[0] == '\n':
-                        if len(text) > 1:
-                            if text[1] != '\n':
-                                stripped_text.append(curr_line)
+                    # If the current line is whitespace then make sure there is
+                    # no more than one consecutive line of whitespace following
+                    if not text[0].strip():
+                        if len(text) > 1 and text[1].strip():
+                            clean_text.append(curr_line)
                     else:
-                        stripped_text.append(curr_line)
+                        clean_text.append(curr_line)
             else:
-                # Final line in text, add if it is not whitespace
-                if curr_line != '\n':
-                    stripped_text.append(curr_line)
+                # Add the final line if it is not whitespace
+                if curr_line.strip():
+                    clean_text.append(curr_line)
 
-    clean_text = []
-    for line in stripped_text:
-        # Reduce multiple spaces to single spaces
-        while '  ' in line:
-            line = line.replace('  ', ' ')
-        # Remove carriage returns
-        clean_text.append(line.replace('\r', ''))
-    return clean_text
+    # Now filter each individual line for extraneous whitespace
+    cleaner_text = []
+    clean_line = ''
+    for line in clean_text:
+        clean_line = ' '.join(line.split())
+        if not clean_line.strip():
+            clean_line += '\n'
+        cleaner_text.append(clean_line)
+    return cleaner_text
 
 
 def parse_text(infile, xpath=None, filter_words=None, attributes=None):
