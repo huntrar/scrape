@@ -1,3 +1,10 @@
+0.6.6
+------
+
+ - added out file names as a program argument
+ - fixed bug where re-writing multiple files
+ - fixed bug where writing only the first file when writing single file
+
 0.6.5
 ------
 

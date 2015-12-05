@@ -54,6 +54,8 @@ def get_parser():
                         help='max number of links to scrape')
     parser.add_argument('-n', '--nonstrict', action='store_true',
                         help='allow crawler to visit any domain')
+    parser.add_argument('-o', '--out', type=str, nargs='*',
+                        help='specify outfile names')
     parser.add_argument('-p', '--pdf', help='write files as pdf',
                         action='store_true')
     parser.add_argument('-q', '--quiet', help='suppress program output',
@@ -300,8 +302,7 @@ def write_to_text(args, infilenames, outfilenames):
         # Aggregate all text for writing to a single output file
         all_text = []
 
-    for i, (infilename, outfilename) in enumerate(zip(infilenames,
-                                                      outfilenames)):
+    for i, infilename in enumerate(infilenames):
         if infilename.endswith('.html'):
             # Convert HTML to lxml object for content parsing
             html = lh.fromstring(utils.read_files(infilename))
@@ -319,7 +320,7 @@ def write_to_text(args, infilenames, outfilenames):
             if not args['quiet']:
                 if args['files']:
                     sys.stderr.write('Failed to parse file {0}.\n'
-                                     .format(outfilename.replace(
+                                     .format(outfilenames[i].replace(
                                          '.txt', '.html')))
                 else:
                     sys.stderr.write('Failed to parse PART{0}.html.\n'
@@ -329,9 +330,9 @@ def write_to_text(args, infilenames, outfilenames):
             if args['multiple']:
                 if not args['quiet']:
                     print('Attempting to write to {0}.'
-                          .format(outfilename))
-                utils.remove_file(outfilename)
-                utils.write_file(parsed_text, outfilename)
+                          .format(outfilenames[i]))
+                utils.remove_file(outfilenames[i])
+                utils.write_file(parsed_text, outfilenames[i])
             elif args['single']:
                 all_text += parsed_text
                 # Newline added between multiple files being aggregated
@@ -348,7 +349,7 @@ def write_to_text(args, infilenames, outfilenames):
         utils.write_file(all_text, outfilename)
 
 
-def write_files(args, infilenames, outfilenames, filetypes):
+def write_files(args, infilenames, outfilenames):
     """Write scraped or local files to text or PDF
     
        Keyword arguments:
@@ -360,18 +361,11 @@ def write_files(args, infilenames, outfilenames, filetypes):
        File types are 'files' for local files, or 'urls' for scraped files.
        Remove PART(#).html files after conversion unless otherwise specified.
        """
-    filenames = []
-    if 'files' in filetypes:
-        filenames += infilenames
-    if 'urls' in filetypes:
-        # Scraped URLs are downloaded as PART.html files
-        filenames += utils.get_part_filenames()
-
     if args['pdf']:
-        write_to_pdf(args, filenames, outfilenames)
+        write_to_pdf(args, infilenames, outfilenames)
     elif args['text']:
-        write_to_text(args, filenames, outfilenames)
-    if 'urls' in filetypes and not args['html']:
+        write_to_text(args, infilenames, outfilenames)
+    if args['urls'] and not args['html']:
         utils.remove_part_files()
 
 
@@ -390,39 +384,45 @@ def get_single_outfilename(args):
 
 def write_single_file(args, base_dir):
     """Write to a single output file and/or subdirectory"""
-    filetypes = []
-    filenames = []
+    infilenames = []
     if args['urls']:
-        filetypes.append('urls')
         if args['html']:
             # Create a single directory to store HTML files in
             domain = args['domains'][0]
             if not args['quiet']:
                 print('Storing html files in {0}/'.format(domain))
             utils.mkdir_and_cd(domain)
-    if args['files']:
-        filetypes.append('files')
-        filenames += list(args['files'])
 
-    for url in args['urls']:
-        if args['crawl'] or args['crawl_all']:
-            # crawl traverses and saves pages as PART.html files
-            crawl(args, url, domain)
-        else:
-            raw_html = utils.get_raw_html(url)
-            if raw_html is not None:
-                utils.write_part_file(args, raw_html)
+    for query in args['query']:
+        if query in args['urls']:
+            if args['crawl'] or args['crawl_all']:
+                # crawl traverses and saves pages as PART.html files
+                crawl(args, query, domain)
             else:
-                return False
+                raw_html = utils.get_raw_html(query)
+                if raw_html is not None:
+                    past_part_num = utils.get_num_part_files()
+                    utils.write_part_file(args, raw_html)
+                    curr_part_num = utils.get_num_part_files()
+                    for part_name in utils.get_part_filenames(curr_part_num,
+                                                              past_part_num):
+                        infilenames.append(part_name)
+                else:
+                    return False
+        elif query in args['files']:
+            infilenames.append(query)
 
     if args['html']:
         # HTML files have been written already, so return to base directory
         os.chdir(base_dir)
     else:
         # Write files to text or pdf
-        outfilename = get_single_outfilename(args)
+        if args['out']:
+            outfilename = args['out'][0]
+        else:
+            outfilename = get_single_outfilename(args)
         if outfilename:
-            write_files(args, filenames, [outfilename], filetypes)
+            write_files(args, infilenames, [outfilename])
         else:
             utils.remove_part_files()
     return True
@@ -430,35 +430,53 @@ def write_single_file(args, base_dir):
 
 def write_multiple_files(args, base_dir):
     """Write to multiple output files and/or subdirectories"""
-    for filename in args['files']:
-        filenames = [filename]
-        outfilenames = ['.'.join(filename.split('.')[:-1])]
-        write_files(args, filenames, outfilenames, ['files'])
-
-    for url, domain in zip(args['urls'], args['domains']):
-        if args['html']:
-            # Save .html files in a subdir named after the domain
-            if not args['quiet']:
-                print('Storing html files in {0}/'.format(domain))
-            utils.mkdir_and_cd(domain)
-
-        if args['crawl'] or args['crawl_all']:
-            # crawl traverses and saves pages as PART.html files
-            crawl(args, url, domain)
-        else:
-            raw_html = utils.get_raw_html(url)
-            if raw_html is not None:
-                utils.write_part_file(args, raw_html)
+    urls_ct = 0
+    for i, query in enumerate(args['query']):
+        if query in args['files']:
+            # Write files
+            if args['out'] and i < len(args['out']):
+                outfilename = args['out'][i]
             else:
-                return False
+                outfilename = '.'.join(query.split('.')[:-1])
+            write_files(args, [query], [outfilename])
+        elif query in args['urls']:
+            # Scrape/crawl urls
+            domain = args['domains'][urls_ct]
+            urls_ct += 1
+            if args['html']:
+                # Save .html files in a subdir named after the domain
+                if not args['quiet']:
+                    print('Storing html files in {0}/'.format(domain))
+                utils.mkdir_and_cd(domain)
 
-        if args['html']:
-            # HTML files have been written already, so return to base directory
-            os.chdir(base_dir)
-        else:
-            # Write files to text or pdf
-            outfilenames = [utils.get_outfilename(url, domain)]
-            write_files(args, [], outfilenames, ['urls'])
+            # Crawl and/or write HTML files to disk
+            if args['crawl'] or args['crawl_all']:
+                # Traverses and saves pages as PART.html files
+                prev_part_num = utils.get_num_part_files()
+                crawl(args, query, domain)
+                curr_part_num = utils.get_num_part_files()
+            else:
+                raw_html = utils.get_raw_html(query)
+                if raw_html is not None:
+                    # Saves page as PART.html file
+                    prev_part_num = utils.get_num_part_files()
+                    utils.write_part_file(args, raw_html)
+                    curr_part_num = prev_part_num + 1
+                else:
+                    return False
+
+            if args['html']:
+                # HTML files have been written already, so return to base directory
+                os.chdir(base_dir)
+            else:
+                # Write files to text or pdf
+                infilenames = utils.get_part_filenames(curr_part_num,
+                                                           prev_part_num)
+                if args['out']:
+                    outfilename = args['out'][i]
+                else:
+                    outfilename = utils.get_outfilename(query, domain)
+                write_files(args, infilenames, [outfilename])
     return True
 
 
@@ -467,10 +485,13 @@ def scrape(args):
     try:
         base_dir = os.getcwd()
 
+        if args['out'] is None:
+            args['out'] = []
+
         # Detect whether to save to a single or multiple files
         if not args['single'] and not args['multiple']:
             # Save to multiple files if multiple files/URL's entered
-            if len(args['query']) > 1:
+            if len(args['query']) > 1 or len(args['out']) > 1:
                 args['multiple'] = True
             else:
                 args['single'] = True

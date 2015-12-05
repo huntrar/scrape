@@ -11,21 +11,16 @@ import requests
 
 SYS_VERSION = sys.version_info[0]
 if SYS_VERSION == 2:
+    from urllib import getproxies
+    from urlparse import urlparse, urljoin
+
     try:
         range = xrange
     except NameError:
         pass
-
-try:
-    from urllib import getproxies
-except ImportError:
+else:
     from urllib.request import getproxies
-
-try:
-    from urlparse import urlparse, urljoin
-except ImportError:
     from urllib.parse import urlparse, urljoin
-
 
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
                'Gecko/20100101 Firefox/11.0',
@@ -408,11 +403,11 @@ def write_part_file(args, html, part_num=None):
                 f.write(html)
 
 
-def get_part_filenames(num_parts=None):
+def get_part_filenames(num_parts=None, start_num=0):
     """Get numbered PART.html filenames"""
     if num_parts is None:
         num_parts = get_num_part_files()
-    return ['PART{0}.html'.format(i) for i in range(1, num_parts + 1)]
+    return ['PART{0}.html'.format(i) for i in range(start_num+1, num_parts+1)]
 
 
 def read_files(filenames):
