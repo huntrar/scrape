@@ -472,7 +472,7 @@ def write_multiple_files(args, base_dir):
                 # Write files to text or pdf
                 infilenames = utils.get_part_filenames(curr_part_num,
                                                            prev_part_num)
-                if args['out']:
+                if args['out'] and i < len(args['out']):
                     outfilename = args['out'][i]
                 else:
                     outfilename = utils.get_outfilename(query, domain)
