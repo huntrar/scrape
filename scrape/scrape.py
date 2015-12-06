@@ -394,7 +394,7 @@ def write_single_file(args, base_dir):
             utils.mkdir_and_cd(domain)
 
     for query in args['query']:
-        if query in args['urls']:
+        if query.strip('/') in args['urls']:
             if args['crawl'] or args['crawl_all']:
                 # crawl traverses and saves pages as PART.html files
                 crawl(args, query, domain)
@@ -404,9 +404,8 @@ def write_single_file(args, base_dir):
                     past_part_num = utils.get_num_part_files()
                     utils.write_part_file(args, raw_html)
                     curr_part_num = utils.get_num_part_files()
-                    for part_name in utils.get_part_filenames(curr_part_num,
-                                                              past_part_num):
-                        infilenames.append(part_name)
+                    infilenames += utils.get_part_filenames(curr_part_num,
+                                                            past_part_num)
                 else:
                     return False
         elif query in args['files']:
@@ -503,7 +502,7 @@ def scrape(args):
             if os.path.isfile(arg):
                 args['files'].append(arg)
             else:
-                args['urls'].append(arg)
+                args['urls'].append(arg.strip('/'))
 
         # Print error if attempting to convert local files to HTML
         if args['files'] and args['html']:
