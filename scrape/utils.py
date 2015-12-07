@@ -94,12 +94,13 @@ def re_filter(text, regexps):
         matched_text = []
         for line in text:
             for regexp in regexps:
-                found = regexp.search(line)
-                if found:
-                    group = found.group()
-                    if group:
-                        matched_text.append(line)
-                        matched_text.append('\n')
+                if line not in matched_text:
+                    found = regexp.search(line)
+                    if found:
+                        group = found.group()
+                        if group:
+                            matched_text.append(line)
+                            matched_text.append('\n')
         if matched_text:
             # Last line is an unnecessary newline
             return matched_text[:-1]

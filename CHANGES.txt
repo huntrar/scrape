@@ -1,3 +1,10 @@
+0.7.0
+------
+
+ - fixed crawl not returning filenames to add to infilenames
+ - fixed re_filter adding duplicate matches
+ - fixed domain unboundlocalerror
+
 0.6.9
 ------
 

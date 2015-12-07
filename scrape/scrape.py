@@ -117,8 +117,7 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
                         links = [x for x in links if seed_domain in x]
                     # Links may be filtered by regex keywords
                     if args['crawl']:
-                        for keyword in args['crawl']:
-                            links = utils.re_filter(links, keyword)
+                        links = utils.re_filter(links, args['crawl'])
 
                     uncrawled_links.update(links)
                     crawled_links.add(utils.remove_scheme(url))
@@ -143,7 +142,9 @@ def crawl(args, seed_url, seed_domain):
        seed_domain -- the domain of the seed URL (str)
 
        Initialize crawled/uncrawled links by exctracting links from a seed URL.
+       Returns the PART.html filenames created during crawling.
     """
+    prev_part_num = utils.get_num_part_files()
     crawled_links = set()
     uncrawled_links = OrderedSet()
     raw_html = utils.get_raw_html(seed_url)
@@ -167,6 +168,8 @@ def crawl(args, seed_url, seed_domain):
             print('Crawled {0} (#{1}).'.format(seed_url, len(crawled_links)))
         follow_links(args, uncrawled_links, crawled_links, seed_url,
                      seed_domain)
+    curr_part_num = utils.get_num_part_files()
+    return utils.get_part_filenames(curr_part_num, prev_part_num)
 
 
 def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
@@ -386,9 +389,9 @@ def write_single_file(args, base_dir):
     """Write to a single output file and/or subdirectory"""
     infilenames = []
     if args['urls']:
+        domain = args['domains'][0]
         if args['html']:
             # Create a single directory to store HTML files in
-            domain = args['domains'][0]
             if not args['quiet']:
                 print('Storing html files in {0}/'.format(domain))
             utils.mkdir_and_cd(domain)
@@ -397,15 +400,15 @@ def write_single_file(args, base_dir):
         if query.strip('/') in args['urls']:
             if args['crawl'] or args['crawl_all']:
                 # crawl traverses and saves pages as PART.html files
-                crawl(args, query, domain)
+                infilenames += crawl(args, query, domain)
             else:
                 raw_html = utils.get_raw_html(query)
                 if raw_html is not None:
-                    past_part_num = utils.get_num_part_files()
+                    prev_part_num = utils.get_num_part_files()
                     utils.write_part_file(args, raw_html)
                     curr_part_num = utils.get_num_part_files()
                     infilenames += utils.get_part_filenames(curr_part_num,
-                                                            past_part_num)
+                                                            prev_part_num)
                 else:
                     return False
         elif query in args['files']:
