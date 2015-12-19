@@ -129,7 +129,7 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
                     if not args['quiet']:
                         sys.stderr.write('Failed to parse {0}.\n'
                                          .format(url))
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         pass
 
 
@@ -555,7 +555,7 @@ def command_line_runner():
             while filetype not in valid_types:
                 filetype = input('Invalid entry. Choose from ({0}): '
                                  .format(', '.join(valid_types))).lower()
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             return
         args[filetype] = True
     scrape(args)
