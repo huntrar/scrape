@@ -1,9 +1,12 @@
+from cgi import escape
 import hashlib
 import os
 import random
 import re
+import shutil
 import string
 import sys
+import time
 
 import lxml.html as lh
 import requests
@@ -14,10 +17,7 @@ if SYS_VERSION == 2:
     from urllib import getproxies
     from urlparse import urlparse, urljoin
 
-    try:
-        range = xrange
-    except NameError:
-        pass
+    range = xrange
 else:
     from urllib.request import getproxies
     from urllib.parse import urlparse, urljoin
@@ -49,28 +49,26 @@ def get_proxies():
     return filtered_proxies
 
 
-def get_html(url):
-    """Get HTML response as an lxml.html.HtmlElement object"""
+def get_resp(url):
+    """Get webpage response as an lxml.html.HtmlElement object"""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
         return lh.fromstring(request.text.encode('utf-8'))
-    except Exception as err:
+    except Exception:
         sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
-        sys.stderr.write('{0}\n'.format(str(err)))
-        return None
+        raise
 
 
-def get_raw_html(url):
-    """Get HTML response as a str object"""
+def get_raw_resp(url):
+    """Get webpage response as a str object"""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
         return request.text.encode('utf-8')
-    except Exception as err:
+    except Exception:
         sys.stderr.write('Failed to retrieve {0} as str.\n'.format(url))
-        sys.stderr.write('{0}\n'.format(str(err)))
-        return None
+        raise
 
 
 def hash_text(text):
@@ -114,7 +112,6 @@ def clean_attr(attr):
             return 'text()'
         else:
             attr = attr.lstrip('@')
-
     if attr:
         return '@' + attr
     return None
@@ -124,7 +121,6 @@ def parse_html(infile, xpath):
     """Filter HTML using XPath"""
     if not isinstance(infile, lh.HtmlElement):
         infile = lh.fromstring(infile)
-
     infile = infile.xpath(xpath)
     if not infile:
         raise ValueError('XPath {0} returned no results.'.format(xpath))
@@ -186,7 +182,7 @@ def remove_whitespace(text):
 
 def parse_text(infile, xpath=None, filter_words=None, attributes=None):
     """Filter text using XPath, regex keywords, and tag attributes
-    
+
        Keyword arguments:
        infile -- HTML or text content to parse (list)
        xpath -- an XPath expression (str)
@@ -216,11 +212,11 @@ def parse_text(infile, xpath=None, filter_words=None, attributes=None):
         attributes = ['text()']
 
     if not text:
+        text_xpath = '//*[not(self::script) and not(self::style)]'
         for attr in attributes:
             for infile in infiles:
                 if isinstance(infile, lh.HtmlElement):
-                    new_text = infile.xpath('//*[not(self::script) and '
-                                          'not(self::style)]/{0}'.format(attr))
+                    new_text = infile.xpath('{0}/{1}'.format(text_xpath, attr))
                 else:
                     # re.split preserves delimeters place in the list
                     new_text = [x for x in re.split('(\n)', infile) if x]
@@ -280,7 +276,7 @@ def get_outfilename(url, domain=None):
 
         if not domain:
             return tail_url
-        return (domain + '-' + tail_url).lower()
+        return '{0}-{1}'.format(domain, tail_url).lower()
     else:
         return domain.lower()
 
@@ -316,7 +312,7 @@ def clean_url(url, base_url):
 def add_url_ext(url):
     """Add .com to url"""
     url = url.rstrip('/')
-    if '.' not in url:
+    if not os.path.splitext(url)[1]:
         url = '{0}.com'.format(url)
     return url
 
@@ -335,10 +331,10 @@ def write_file(text, filename):
     try:
         if not text:
             return False
-        with open(filename, 'a') as f:
+        with open(filename, 'a') as outfile:
             for line in text:
                 if line:
-                    f.write(line)
+                    outfile.write(line)
         return True
     except (OSError, IOError):
         sys.stderr.write('Failed to write {0}.\n'.format(filename))
@@ -363,45 +359,92 @@ def get_num_part_files():
     return num_parts
 
 
-def write_part_file(args, html, part_num=None):
-    """Write PART.html files to disk
-    
+def write_part_images(url, raw_html, html, filename):
+    """Write image files associated with HTML to disk and substitute filenames
+
+       Keywords arguments:
+       url -- the URL from which the HTML has been extracted from (str)
+       raw_html -- unparsed HTML file content (list)
+       html -- parsed HTML file content (lxml.html.HtmlElement) (default: None)
+       filename -- the PART.html filename (str)
+
+       Return raw HTML with image names replaced with local image filenames.
+    """
+    save_dirname = '{0}_files'.format(os.path.splitext(filename)[0])
+    if not os.path.exists(save_dirname):
+        os.makedirs(save_dirname)
+    images = html.xpath('//img/@src')
+    internal_image_urls = [x for x in images if x.startswith('/')]
+
+    headers = {'User-Agent': random.choice(USER_AGENTS)}
+    for img_url in images:
+        img_name = img_url.split('/')[-1]
+        if "?" in img_name:
+            img_name = img_name.split('?')[0]
+        if not os.path.splitext(img_name)[1]:
+            img_name = '{0}.jpeg'.format(img_name)
+
+        try:
+            full_img_name = os.path.join(save_dirname, img_name)
+            with open(full_img_name, 'wb') as img:
+                if img_url in internal_image_urls:
+                    # Internal images need base url added
+                    full_img_url = '{0}{1}'.format(url.rstrip('/'), img_url)
+                else:
+                    # External image
+                    full_img_url = img_url
+                img_content = requests.get(full_img_url, headers=headers,
+                                           proxies=get_proxies()).content
+                img.write(img_content)
+                raw_html = raw_html.replace(escape(img_url), full_img_name)
+        except (OSError, IOError):
+            pass
+        time.sleep(random.uniform(0, 0.5))  # Slight delay between downloads
+    return raw_html
+
+
+def write_part_file(args, url, raw_html, html=None, part_num=None):
+    """Write PART.html files to disk and save images to a PART_files directory
+
        Keyword arguments:
        args -- program arguments (dict)
-       html -- HTML file content (list)
-       part_num -- PART(#).html file number (default: None)
+       raw_html -- unparsed HTML file content (list)
+       html -- parsed HTML file content (lxml.html.HtmlElement) (default: None)
+       part_num -- PART(#).html file number (int) (default: None)
     """
     if part_num is None:
         part_num = get_num_part_files() + 1
+    filename = 'PART{0}.html'.format(part_num)
 
     # Decode bytes to str if necessary for Python 3
-    if type(html) == bytes:
-        html = html.decode('ascii', 'ignore')
+    if type(raw_html) == bytes:
+        raw_html = raw_html.decode('ascii', 'ignore')
+    # Convert html to an lh.HtmlElement object for parsing/saving images
+    if html is None:
+        html = lh.fromstring(raw_html)
 
     # Parse HTML if XPath entered
     if args['xpath']:
-        html = parse_html(html, args['xpath'])
-        if isinstance(html, list):
-            if not isinstance(html[0], lh.HtmlElement):
+        raw_html = parse_html(html, args['xpath'])
+        if isinstance(raw_html, list):
+            if not isinstance(raw_html[0], lh.HtmlElement):
                 raise ValueError('XPath should return an HtmlElement object.')
         else:
-            if not isinstance(html, lh.HtmlElement):
+            if not isinstance(raw_html, lh.HtmlElement):
                 raise ValueError('XPath should return an HtmlElement object.')
 
-    filename = 'PART{0}.html'.format(part_num)
-    with open(filename, 'w') as f:
-        if isinstance(html, list) and html:
-            if isinstance(html[0], lh.HtmlElement):
-                for elem in html:
-                    f.write(lh.tostring(elem))
-            else:
-                for line in html:
-                    f.write(line)
-        else:
-            if isinstance(html, lh.HtmlElement):
-                f.write(lh.tostring(html))
-            else:
-                f.write(html)
+    # Write HTML and images to disk
+    if raw_html:
+        raw_html = write_part_images(url, raw_html, html, filename)
+        with open(filename, 'w') as part:
+            if not isinstance(raw_html, list):
+                raw_html = [raw_html]
+                if isinstance(raw_html[0], lh.HtmlElement):
+                    for elem in raw_html:
+                        part.write(lh.tostring(elem))
+                else:
+                    for line in raw_html:
+                        part.write(line)
 
 
 def get_part_filenames(num_parts=None, start_num=0):
@@ -413,18 +456,25 @@ def get_part_filenames(num_parts=None, start_num=0):
 
 def read_files(filenames):
     """Read a file into memory."""
-    data = ''
     if isinstance(filenames, list):
         for filename in filenames:
-            with open(filename, 'r') as f:
-                return f.read()
+            with open(filename, 'r') as infile:
+                return infile.read()
     else:
-        with open(filenames, 'r') as f:
-            return f.read()
+        with open(filenames, 'r') as infile:
+            return infile.read()
+
+
+def remove_part_images(filename):
+    """Remove PART(#)_files directory containing images from disk"""
+    dirname = '{0}_files'.format(os.path.splitext(filename)[0])
+    if os.path.exists(dirname):
+        shutil.rmtree(dirname)
 
 
 def remove_part_files(num_parts=None):
-    """Remove PART(#).html files from disk"""
+    """Remove PART(#).html files and image directories from disk"""
     filenames = get_part_filenames(num_parts)
     for filename in filenames:
+        remove_part_images(filename)
         remove_file(filename)

@@ -1,3 +1,9 @@
+0.7.2
+------
+
+ - now saves images with PART.html files (but not css yet)
+ - added module level docstrings
+
 0.7.1
 ------
 

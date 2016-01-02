@@ -1,11 +1,8 @@
 #!/usr/bin/env python
+""" scrape - a command-line web scraping tool
 
-######################################################################
-#                                                                    #
-# scrape - a command-line web scraping tool                          #
-# written by Hunter Hammond (huntrar@gmail.com)                      #
-#                                                                    #
-######################################################################
+    written by Hunter Hammond (huntrar@gmail.com)
+"""
 
 from __future__ import absolute_import, print_function
 import argparse as argp
@@ -97,11 +94,11 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
             # Compare scheme-less URLs to prevent http(s):// dupes
             if (utils.check_scheme(url) and
                     utils.remove_scheme(url) not in crawled_links):
-                raw_html = utils.get_raw_html(url)
-                if raw_html is not None:
-                    html = lh.fromstring(raw_html)
+                raw_resp = utils.get_raw_resp(url)
+                if raw_resp is not None:
+                    resp = lh.fromstring(raw_resp)
                     # Compute a hash of the page and check if it is in cache
-                    page_text = utils.parse_text(html)
+                    page_text = utils.parse_text(resp)
                     link_hash = utils.hash_text(''.join(page_text))
                     if link_hash in link_cache:
                         continue
@@ -110,7 +107,7 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
                     # Find new links and remove fragments/append base url
                     # if necessary
                     links = [utils.clean_url(u, seed_url) for u in
-                             html.xpath('//a/@href')]
+                             resp.xpath('//a/@href')]
                     crawled_ct += 1
                     # Domain may be restricted to the seed domain
                     if not args['nonstrict'] and seed_domain in url:
@@ -121,7 +118,8 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
 
                     uncrawled_links.update(links)
                     crawled_links.add(utils.remove_scheme(url))
-                    utils.write_part_file(args, raw_html, len(crawled_links))
+                    utils.write_part_file(args, url, raw_resp, resp,
+                                          len(crawled_links))
                     if not args['quiet']:
                         print('Crawled {0} (#{1}).'
                               .format(url, len(crawled_links)))
@@ -147,12 +145,12 @@ def crawl(args, seed_url, seed_domain):
     prev_part_num = utils.get_num_part_files()
     crawled_links = set()
     uncrawled_links = OrderedSet()
-    raw_html = utils.get_raw_html(seed_url)
-    if raw_html is not None:
-        html = lh.fromstring(raw_html)
+    raw_resp = utils.get_raw_resp(seed_url)
+    if raw_resp is not None:
+        resp = lh.fromstring(raw_resp)
         # Find new links and remove fragments/append base url if necessary
         links = [utils.clean_url(u, seed_url) for u
-                 in html.xpath('//a/@href')]
+                 in resp.xpath('//a/@href')]
         # Domain may be restricted to the seed domain
         if not args['nonstrict']:
             links = [x for x in links if seed_domain in x]
@@ -163,7 +161,8 @@ def crawl(args, seed_url, seed_domain):
 
         uncrawled_links.update(links)
         crawled_links.add(utils.remove_scheme(seed_url))
-        utils.write_part_file(args, raw_html, len(crawled_links))
+        utils.write_part_file(args, seed_url, raw_resp, resp,
+                              len(crawled_links))
         if not args['quiet']:
             print('Crawled {0} (#{1}).'.format(seed_url, len(crawled_links)))
         follow_links(args, uncrawled_links, crawled_links, seed_url,
@@ -354,7 +353,7 @@ def write_to_text(args, infilenames, outfilenames):
 
 def write_files(args, infilenames, outfilenames):
     """Write scraped or local files to text or PDF
-    
+
        Keyword arguments:
        args -- program arguments (dict)
        infilenames -- names of user-inputted files (list)
@@ -402,10 +401,10 @@ def write_single_file(args, base_dir):
                 # crawl traverses and saves pages as PART.html files
                 infilenames += crawl(args, query, domain)
             else:
-                raw_html = utils.get_raw_html(query)
-                if raw_html is not None:
+                raw_resp = utils.get_raw_resp(query)
+                if raw_resp is not None:
                     prev_part_num = utils.get_num_part_files()
-                    utils.write_part_file(args, raw_html)
+                    utils.write_part_file(args, query, raw_resp)
                     curr_part_num = utils.get_num_part_files()
                     infilenames += utils.get_part_filenames(curr_part_num,
                                                             prev_part_num)
@@ -458,22 +457,22 @@ def write_multiple_files(args, base_dir):
                 crawl(args, query, domain)
                 curr_part_num = utils.get_num_part_files()
             else:
-                raw_html = utils.get_raw_html(query)
-                if raw_html is not None:
+                raw_resp = utils.get_raw_resp(query)
+                if raw_resp is not None:
                     # Saves page as PART.html file
                     prev_part_num = utils.get_num_part_files()
-                    utils.write_part_file(args, raw_html)
+                    utils.write_part_file(args, query, raw_resp)
                     curr_part_num = prev_part_num + 1
                 else:
                     return False
 
             if args['html']:
-                # HTML files have been written already, so return to base directory
+                # HTML files have been written already, so return to base dir
                 os.chdir(base_dir)
             else:
                 # Write files to text or pdf
                 infilenames = utils.get_part_filenames(curr_part_num,
-                                                           prev_part_num)
+                                                       prev_part_num)
                 if args['out'] and i < len(args['out']):
                     outfilename = args['out'][i]
                 else:
