@@ -9,7 +9,6 @@ import shutil
 import string
 import sys
 import time
-from urlparse import urlparse
 
 import lxml.html as lh
 import requests
