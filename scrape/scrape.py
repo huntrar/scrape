@@ -233,7 +233,8 @@ def write_to_pdf(args, infilenames, outfilename):
 
        Convert files to PDF using pdfkit.
     """
-    outfilename = outfilename + '.pdf'
+    if not outfilename.endswith('.pdf')
+        outfilename = outfilename + '.pdf'
     utils.remove_file(outfilename)
     options = {}
     # Only ignore errors if there is more than one page
@@ -266,21 +267,20 @@ def write_to_pdf(args, infilenames, outfilename):
         raise
 
 
-def write_to_text(args, infilenames, outfilenames):
+def write_to_text(args, infilenames, outfilename):
     """Write files to text
 
        Keyword arguments:
        args -- program arguments (dict)
-       infilenames -- names of input files (list)
-       outfilenames -- names of output text files (list)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output text file (str)
 
        Text is parsed using XPath, regexes, or tag attributes prior to writing.
     """
-    outfilename = outfilename + '.txt'
-    if args['single']:
-        # Text must be aggregated for writing to a single output file
-        all_text = []
+    if not outfilename.endswith('.txt'):
+        outfilename = outfilename + '.txt'
 
+    all_text = []  # Text must be aggregated if writing to a single output file
     for i, infilename in enumerate(infilenames):
         if infilename.endswith('.html'):
             # Convert HTML to lxml object for content parsing
