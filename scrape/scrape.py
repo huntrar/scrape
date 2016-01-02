@@ -171,69 +171,70 @@ def crawl(args, seed_url, seed_domain):
     return utils.get_part_filenames(curr_part_num, prev_part_num)
 
 
-def pdfkit_convert_xpath(args, infilenames, outfilenames, options):
-    """Filter HTML files by XPath and then convert to PDF using pdfkit
+def xpath_write_to_pdf(args, infilenames, outfilenames, options):
+    """Filter HTML files by XPath and then write files to PDF using pdfkit
 
        Keyword arguments:
        args -- program arguments (dict)
-       infilenames -- names of input files (list)
-       outfilenames -- names of output PDF files (list)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output PDF file (str)
        options -- pdfkit options (dict)
+
+       Convert files to PDF using pdfkit.
     """
     if args['multiple']:
+        # Multiple files are written one at a time, so infilenames will
+        # never contain more than one file here
+        infilename = infilenames[0]
         html = None
-        for i, infilename in enumerate(infilenames):
-            if not args['quiet']:
-                print('Attempting to write to {0}.'
-                      .format(outfilenames[i]))
-            else:
-                options['quiet'] = None
-
-            html = utils.parse_html(utils.read_files(infilename),
-                                    args['xpath'])
-            if isinstance(html, list):
-                if isinstance(html[0], str):
-                    pk.from_string('\n'.join(html), outfilenames[i],
-                                   options=options)
-                else:
-                    pk.from_string('\n'.join(lh.tostring(x) for x in html),
-                                   outfilenames[i], options=options)
-            elif isinstance(html, str):
-                pk.from_string(html, outfilenames[i], options=options)
-            else:
-                pk.from_string(lh.tostring(html), outfilenames[i],
-                               options=options)
-    elif args['single']:
         if not args['quiet']:
-            print('Attempting to write {0} page(s) to {1}.'
-                  .format(len(infilenames), outfilenames[0]))
+            print('Attempting to write to {0}.'.format(outfilename))
         else:
             options['quiet'] = None
 
-        html = utils.parse_html(utils.read_files(infilenames),
-                                args['xpath'])
+        html = utils.parse_html(utils.read_files(infilename), args['xpath'])
         if isinstance(html, list):
             if isinstance(html[0], str):
-                pk.from_string('\n'.join(html), outfilenames[0],
-                               options=options)
+                pk.from_string('\n'.join(html), outfilename, options=options)
             else:
                 pk.from_string('\n'.join(lh.tostring(x) for x in html),
-                               outfilenames[0], options=options)
+                               outfilename, options=options)
         elif isinstance(html, str):
-            pk.from_string(html, outfilenames[0], options=options)
+            pk.from_string(html, outfilename, options=options)
         else:
-            pk.from_string(lh.tostring(html), outfilenames[0],
-                           options=options)
+            pk.from_string(lh.tostring(html), outfilename, options=options)
+    elif args['single']:
+        if not args['quiet']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(infilenames), outfilename))
+        else:
+            options['quiet'] = None
+
+        html = utils.parse_html(utils.read_files(infilenames), args['xpath'])
+        if isinstance(html, list):
+            if isinstance(html[0], str):
+                pk.from_string('\n'.join(html), outfilename, options=options)
+            else:
+                pk.from_string('\n'.join(lh.tostring(x) for x in html),
+                               outfilename, options=options)
+        elif isinstance(html, str):
+            pk.from_string(html, outfilename, options=options)
+        else:
+            pk.from_string(lh.tostring(html), outfilename, options=options)
 
 
-def pdfkit_convert(args, infilenames, outfilenames):
-    """Convert files to PDF using pdfkit
+def write_to_pdf(args, infilenames, outfilename):
+    """Write files to PDF using pdfkit
 
        Keyword arguments:
        args -- program arguments (dict)
-       infilenames -- names of input files (list)
-       outfilenames -- names of output PDF files (list)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output PDF file (str)
+
+       Convert files to PDF using pdfkit.
     """
+    outfilename = outfilename + '.pdf'
+    utils.remove_file(outfilename)
     options = {}
     # Only ignore errors if there is more than one page
     # This prevents an empty write if an error occurs
@@ -242,48 +243,27 @@ def pdfkit_convert(args, infilenames, outfilenames):
 
     try:
         if args['xpath']:
-            pdfkit_convert_xpath(args, infilenames, outfilenames, options)
+            xpath_write_to_pdf(args, infilenames, outfilename, options)
         elif args['multiple']:
-            for i, infilename in enumerate(infilenames):
-                if not args['quiet']:
-                    print('Attempting to write to {0}.'
-                          .format(outfilenames[i]))
-                else:
-                    options['quiet'] = None
-                pk.from_file(infilename, outfilenames[i], options=options)
+            # Multiple files are written one at a time, so infilenames will
+            # never contain more than one file here
+            infilename = infilenames[0]
+            if not args['quiet']:
+                print('Attempting to write to {0}.'.format(outfilename))
+            else:
+                options['quiet'] = None
+            pk.from_file(infilename, outfilename, options=options)
         elif args['single']:
             if not args['quiet']:
                 print('Attempting to write {0} page(s) to {1}.'
-                      .format(len(infilenames), outfilenames[0]))
+                      .format(len(infilenames), outfilename))
             else:
                 options['quiet'] = None
-            pk.from_file(infilenames, outfilenames[0], options=options)
+            pk.from_file(infilenames, outfilename, options=options)
     except (KeyboardInterrupt, Exception):
         if args['urls']:
             utils.remove_part_files()
         raise
-
-
-def write_to_pdf(args, infilenames, outfilenames):
-    """Write files to PDF
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of input files (list)
-       outfilenames -- names of output PDF files (list)
-
-       Convert files to PDF using pdfkit.
-    """
-    if args['multiple']:
-        pdf_filenames = [x + '.pdf' for x in outfilenames]
-        outfilenames = pdf_filenames
-        for filename in outfilenames:
-            utils.remove_file(filename)
-        pdfkit_convert(args, infilenames, outfilenames)
-    elif args['single']:
-        outfilename = outfilenames[0] + '.pdf'
-        utils.remove_file(outfilename)
-        pdfkit_convert(args, infilenames, [outfilename])
 
 
 def write_to_text(args, infilenames, outfilenames):
@@ -296,12 +276,9 @@ def write_to_text(args, infilenames, outfilenames):
 
        Text is parsed using XPath, regexes, or tag attributes prior to writing.
     """
-    if args['multiple']:
-        # Write input files to multiple text files
-        txt_filenames = [x + '.txt' for x in outfilenames]
-        outfilenames = txt_filenames
-    elif args['single']:
-        # Aggregate all text for writing to a single output file
+    outfilename = outfilename + '.txt'
+    if args['single']:
+        # Text must be aggregated for writing to a single output file
         all_text = []
 
     for i, infilename in enumerate(infilenames):
@@ -322,19 +299,18 @@ def write_to_text(args, infilenames, outfilenames):
             if not args['quiet']:
                 if args['files']:
                     sys.stderr.write('Failed to parse file {0}.\n'
-                                     .format(outfilenames[i].replace(
+                                     .format(outfilename.replace(
                                          '.txt', '.html')))
                 else:
                     sys.stderr.write('Failed to parse PART{0}.html.\n'
-                                     .format(i + 1))
+                                     .format(i+1))
 
         if parsed_text:
             if args['multiple']:
                 if not args['quiet']:
-                    print('Attempting to write to {0}.'
-                          .format(outfilenames[i]))
-                utils.remove_file(outfilenames[i])
-                utils.write_file(parsed_text, outfilenames[i])
+                    print('Attempting to write to {0}.'.format(outfilename))
+                utils.remove_file(outfilename)
+                utils.write_file(parsed_text, outfilename)
             elif args['single']:
                 all_text += parsed_text
                 # Newline added between multiple files being aggregated
@@ -343,7 +319,6 @@ def write_to_text(args, infilenames, outfilenames):
 
     # Write all text to a single output file
     if args['single'] and all_text:
-        outfilename = outfilenames[0] + '.txt'
         if not args['quiet']:
             print('Attempting to write {0} page(s) to {1}.'
                   .format(len(infilenames), outfilename))
@@ -351,22 +326,20 @@ def write_to_text(args, infilenames, outfilenames):
         utils.write_file(all_text, outfilename)
 
 
-def write_files(args, infilenames, outfilenames):
+def write_files(args, infilenames, outfilename):
     """Write scraped or local files to text or PDF
 
        Keyword arguments:
        args -- program arguments (dict)
-       infilenames -- names of user-inputted files (list)
-       outfilenames -- names of output PDF files (list)
-       filetypes -- types of files in infilenames (list)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output file (str)
 
-       File types are 'files' for local files, or 'urls' for scraped files.
        Remove PART(#).html files after conversion unless otherwise specified.
-       """
+    """
     if args['pdf']:
-        write_to_pdf(args, infilenames, outfilenames)
+        write_to_pdf(args, infilenames, outfilename)
     elif args['text']:
-        write_to_text(args, infilenames, outfilenames)
+        write_to_text(args, infilenames, outfilename)
     if args['urls'] and not args['html']:
         utils.remove_part_files()
 
@@ -386,15 +359,15 @@ def get_single_outfilename(args):
 
 def write_single_file(args, base_dir):
     """Write to a single output file and/or subdirectory"""
-    infilenames = []
     if args['urls']:
-        domain = args['domains'][0]
+        domain = utils.get_domain(args['urls'][0])
         if args['html']:
             # Create a single directory to store HTML files in
             if not args['quiet']:
                 print('Storing html files in {0}/'.format(domain))
             utils.mkdir_and_cd(domain)
 
+    infilenames = []
     for query in args['query']:
         if query.strip('/') in args['urls']:
             if args['crawl'] or args['crawl_all']:
@@ -405,7 +378,7 @@ def write_single_file(args, base_dir):
                 if raw_resp is not None:
                     prev_part_num = utils.get_num_part_files()
                     utils.write_part_file(args, query, raw_resp)
-                    curr_part_num = utils.get_num_part_files()
+                    curr_part_num = prev_part_num + 1
                     infilenames += utils.get_part_filenames(curr_part_num,
                                                             prev_part_num)
                 else:
@@ -418,12 +391,13 @@ def write_single_file(args, base_dir):
         os.chdir(base_dir)
     else:
         # Write files to text or pdf
-        if args['out']:
-            outfilename = args['out'][0]
-        else:
-            outfilename = get_single_outfilename(args)
-        if outfilename:
-            write_files(args, infilenames, [outfilename])
+        if infilenames:
+            if args['out']:
+                outfilename = args['out'][0]
+            else:
+                outfilename = get_single_outfilename(args)
+            if outfilename:
+                write_files(args, infilenames, outfilename)
         else:
             utils.remove_part_files()
     return True
@@ -431,7 +405,6 @@ def write_single_file(args, base_dir):
 
 def write_multiple_files(args, base_dir):
     """Write to multiple output files and/or subdirectories"""
-    urls_ct = 0
     for i, query in enumerate(args['query']):
         if query in args['files']:
             # Write files
@@ -439,23 +412,20 @@ def write_multiple_files(args, base_dir):
                 outfilename = args['out'][i]
             else:
                 outfilename = '.'.join(query.split('.')[:-1])
-            write_files(args, [query], [outfilename])
+            write_files(args, [query], outfilename)
         elif query in args['urls']:
             # Scrape/crawl urls
-            domain = args['domains'][urls_ct]
-            urls_ct += 1
+            domain = utils.get_domain(query)
             if args['html']:
                 # Save .html files in a subdir named after the domain
                 if not args['quiet']:
                     print('Storing html files in {0}/'.format(domain))
                 utils.mkdir_and_cd(domain)
 
-            # Crawl and/or write HTML files to disk
+            # Crawl and/or write HTML files and images to disk
             if args['crawl'] or args['crawl_all']:
                 # Traverses and saves pages as PART.html files
-                prev_part_num = utils.get_num_part_files()
-                crawl(args, query, domain)
-                curr_part_num = utils.get_num_part_files()
+                infilenames = crawl(args, query, domain)
             else:
                 raw_resp = utils.get_raw_resp(query)
                 if raw_resp is not None:
@@ -463,6 +433,8 @@ def write_multiple_files(args, base_dir):
                     prev_part_num = utils.get_num_part_files()
                     utils.write_part_file(args, query, raw_resp)
                     curr_part_num = prev_part_num + 1
+                    infilenames = utils.get_part_filenames(curr_part_num,
+                                                           prev_part_num)
                 else:
                     return False
 
@@ -471,13 +443,15 @@ def write_multiple_files(args, base_dir):
                 os.chdir(base_dir)
             else:
                 # Write files to text or pdf
-                infilenames = utils.get_part_filenames(curr_part_num,
-                                                       prev_part_num)
-                if args['out'] and i < len(args['out']):
-                    outfilename = args['out'][i]
+                if infilenames:
+                    if args['out'] and i < len(args['out']):
+                        outfilename = args['out'][i]
+                    else:
+                        outfilename = utils.get_outfilename(query, domain)
+                    write_files(args, infilenames, outfilename)
                 else:
-                    outfilename = utils.get_outfilename(query, domain)
-                write_files(args, infilenames, [outfilename])
+                    sys.stderr.write('Failed to retrieve content from {0}.\n'
+                                     .format(query))
     return True
 
 
@@ -516,9 +490,6 @@ def scrape(args):
             urls_with_exts = [utils.add_url_ext(x) for x in args['urls']]
             args['urls'] = [utils.add_scheme(x) if not utils.check_scheme(x)
                             else x for x in urls_with_exts]
-            args['domains'] = [utils.get_domain(x) for x in args['urls']]
-        else:
-            args['domains'] = []
 
         if args['single']:
             return write_single_file(args, base_dir)

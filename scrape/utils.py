@@ -1,3 +1,5 @@
+"""Contains scrape utility functions"""
+
 from cgi import escape
 import hashlib
 import os
@@ -7,6 +9,7 @@ import shutil
 import string
 import sys
 import time
+from urlparse import urlparse
 
 import lxml.html as lh
 import requests
@@ -309,10 +312,22 @@ def clean_url(url, base_url):
     return url.rstrip(string.punctuation)
 
 
+def has_ext(url):
+    """Return whether the url has an extension (unreliable in some cases)"""
+    if 'www.' in url:
+        url = url.replace('www.', '')
+    parsed_url = urlparse(url)
+    if parsed_url.path and not parsed_url.netloc:
+        return bool(os.path.splitext(parsed_url.path)[1])
+    elif parsed_url.netloc:
+        return bool(os.path.splitext(parsed_url.netloc)[1])
+    return False
+
+
 def add_url_ext(url):
-    """Add .com to url"""
+    """Add .com extension to url if none found"""
     url = url.rstrip('/')
-    if not os.path.splitext(url)[1]:
+    if not has_ext(url):
         url = '{0}.com'.format(url)
     return url
 
