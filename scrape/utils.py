@@ -448,9 +448,10 @@ def write_part_file(args, url, raw_html, html=None, part_num=None):
             if not isinstance(raw_html, lh.HtmlElement):
                 raise ValueError('XPath should return an HtmlElement object.')
 
-    # Write HTML and images to disk
+    # Write HTML and possibly images to disk
     if raw_html:
-        raw_html = write_part_images(url, raw_html, html, filename)
+        if not args['no_images'] and (args['pdf'] or args['html']):
+            raw_html = write_part_images(url, raw_html, html, filename)
         with open(filename, 'w') as part:
             if not isinstance(raw_html, list):
                 raw_html = [raw_html]

@@ -51,6 +51,8 @@ def get_parser():
                         help='max number of links to scrape')
     parser.add_argument('-n', '--nonstrict', action='store_true',
                         help='allow crawler to visit any domain')
+    parser.add_argument('-ni', '--no-images', action='store_true',
+                        help='do not save page images')
     parser.add_argument('-o', '--out', type=str, nargs='*',
                         help='specify outfile names')
     parser.add_argument('-p', '--pdf', help='write files as pdf',
@@ -371,7 +373,7 @@ def write_single_file(args, base_dir):
     for query in args['query']:
         if query.strip('/') in args['urls']:
             if args['crawl'] or args['crawl_all']:
-                # crawl traverses and saves pages as PART.html files
+                # Crawl and/or write HTML files and possibly images to disk
                 infilenames += crawl(args, query, domain)
             else:
                 raw_resp = utils.get_raw_resp(query)
@@ -422,7 +424,7 @@ def write_multiple_files(args, base_dir):
                     print('Storing html files in {0}/'.format(domain))
                 utils.mkdir_and_cd(domain)
 
-            # Crawl and/or write HTML files and images to disk
+            # Crawl and/or write HTML files and possibly images to disk
             if args['crawl'] or args['crawl_all']:
                 # Traverses and saves pages as PART.html files
                 infilenames = crawl(args, query, domain)

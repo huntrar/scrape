@@ -1,3 +1,12 @@
+0.7.4
+------
+
+ - added option to not save images
+ - images are now only saved if saving to HTML or PDF
+ - checks if outfilename has extension before adding new one
+ - fixed domains being sometimes mismatched to urls
+ - fixed extension being unnecessary appended to urls (for the most part)
+
 0.7.3
 ------
 
