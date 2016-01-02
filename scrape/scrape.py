@@ -171,7 +171,7 @@ def crawl(args, seed_url, seed_domain):
     return utils.get_part_filenames(curr_part_num, prev_part_num)
 
 
-def xpath_write_to_pdf(args, infilenames, outfilenames, options):
+def xpath_write_to_pdf(args, infilenames, outfilename, options):
     """Filter HTML files by XPath and then write files to PDF using pdfkit
 
        Keyword arguments:
@@ -233,7 +233,7 @@ def write_to_pdf(args, infilenames, outfilename):
 
        Convert files to PDF using pdfkit.
     """
-    if not outfilename.endswith('.pdf')
+    if not outfilename.endswith('.pdf'):
         outfilename = outfilename + '.pdf'
     utils.remove_file(outfilename)
     options = {}
