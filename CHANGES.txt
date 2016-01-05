@@ -3,6 +3,7 @@
 
  - added print text to stdout option
  - removed extra newline appended in re_filter
+ - wrapped pdfkit import in try/except as it isnt essential
 
 0.7.5
 ------

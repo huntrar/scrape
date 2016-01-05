@@ -10,7 +10,10 @@ import os
 import sys
 
 import lxml.html as lh
-import pdfkit as pk
+try:
+    import pdfkit as pk
+except ImportError:
+    pass
 
 from scrape.orderedset import OrderedSet
 from scrape import utils
