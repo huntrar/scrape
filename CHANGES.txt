@@ -1,3 +1,9 @@
+0.7.6
+------
+
+ - added print text to stdout option
+ - removed extra newline appended in re_filter
+
 0.7.5
 ------
 

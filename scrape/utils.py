@@ -100,7 +100,6 @@ def re_filter(text, regexps):
                         group = found.group()
                         if group:
                             matched_text.append(line)
-                            matched_text.append('\n')
         if matched_text:
             # Last line is an unnecessary newline
             return matched_text[:-1]
@@ -190,6 +189,8 @@ def parse_text(infile, xpath=None, filter_words=None, attributes=None):
        xpath -- an XPath expression (str)
        filter_words -- regex keywords (list)
        attributes -- HTML tag attributes (list)
+
+       Return a list of strings of text.
     """
     infiles = []
     text = []

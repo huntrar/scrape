@@ -23,14 +23,15 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
                      [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
                      [-ht] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-ni]
-                     [-o [OUT [OUT ...]]] [-p] [-q] [-s] [-t] [-v] [-x [XPATH]]
+                     [-o [OUT [OUT ...]]] [-p] [-pt] [-q] [-s] [-t] [-v]
+                     [-x [XPATH]]
                      [QUERY [QUERY ...]]
-    
+
     a command-line web scraping tool
-    
+
     positional arguments:
       QUERY                 URL's/files to scrape
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
@@ -51,6 +52,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -o [OUT [OUT ...]], --out [OUT [OUT ...]]
                             specify outfile names
       -p, --pdf             write files as pdf
+      -pt, --print          print text output
       -q, --quiet           suppress program output
       -s, --single          save to a single file
       -t, --text            write files as text (default)
@@ -69,6 +71,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 * To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
 * Crawling can be stopped by Ctrl-C or alternatively by setting the number of pages or links to be crawled using --maxpages and --maxlinks. A page may contain zero or many links to more pages.
+* The text output of scraped files can be printed to stdout rather than saved by entering --print.
 * Filtering HTML can be done using --xpath, while filtering text is done by entering one or more regexps to --filter.
 * If you only want to specify specific tag attributes to extract rather than an entire XPath, use --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
 * Multiple files/URL's are saved to multiple output files/directories by default. To consolidate them, use the --single flag.

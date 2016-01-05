@@ -57,6 +57,8 @@ def get_parser():
                         help='specify outfile names')
     parser.add_argument('-p', '--pdf', help='write files as pdf',
                         action='store_true')
+    parser.add_argument('-pt', '--print', help='print text output',
+                        action='store_true')
     parser.add_argument('-q', '--quiet', help='suppress program output',
                         action='store_true')
     parser.add_argument('-s', '--single', help='save to a single file',
@@ -173,6 +175,88 @@ def crawl(args, seed_url, seed_domain):
     return utils.get_part_filenames(curr_part_num, prev_part_num)
 
 
+def get_parsed_text(args, infilename):
+    """Parse and return text content of infiles
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- name of user-inputted and/or downloaded file (str)
+
+       Return a list of strings of text.
+    """
+    parsed_text = []
+    if infilename.endswith('.html'):
+        # Convert HTML to lxml object for content parsing
+        html = lh.fromstring(utils.read_files(infilename))
+        text = None
+    else:
+        html = None
+        text = utils.read_files(infilename)
+
+    if html is not None:
+        parsed_text = utils.parse_text(html, args['xpath'], args['filter'],
+                                       args['attributes'])
+    elif text is not None:
+        parsed_text = utils.parse_text(text, args['xpath'], args['filter'])
+    else:
+        if not args['quiet']:
+            sys.stderr.write('Failed to parse text from {0}.\n'
+                             .format(infilename))
+    return parsed_text
+
+
+def print_text(args, infilenames):
+    """Print text content of infiles to stdout
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+    """
+    for infilename in infilenames:
+        parsed_text = get_parsed_text(args, infilename)
+        if parsed_text:
+            for line in parsed_text:
+                print(line)
+            print('')
+
+
+def write_to_text(args, infilenames, outfilename):
+    """Write files to text
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output text file (str)
+
+       Text is parsed using XPath, regexes, or tag attributes prior to writing.
+    """
+    if not outfilename.endswith('.txt'):
+        outfilename = outfilename + '.txt'
+
+    all_text = []  # Text must be aggregated if writing to a single output file
+    for i, infilename in enumerate(infilenames):
+        parsed_text = get_parsed_text(args, infilename)
+        if parsed_text:
+            if args['multiple']:
+                if not args['quiet']:
+                    print('Attempting to write to {0}.'.format(outfilename))
+                utils.remove_file(outfilename)
+                utils.write_file(parsed_text, outfilename)
+            elif args['single']:
+                all_text += parsed_text
+                # Newline added between multiple files being aggregated
+                if len(infilenames) > 1 and i < len(infilenames) - 1:
+                    all_text.append('\n')
+
+    # Write all text to a single output file
+    if args['single'] and all_text:
+        if not args['quiet']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(infilenames), outfilename))
+        utils.remove_file(outfilename)
+        utils.write_file(all_text, outfilename)
+
+
 def xpath_write_to_pdf(args, infilenames, outfilename, options):
     """Filter HTML files by XPath and then write files to PDF using pdfkit
 
@@ -269,67 +353,8 @@ def write_to_pdf(args, infilenames, outfilename):
         raise
 
 
-def write_to_text(args, infilenames, outfilename):
-    """Write files to text
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output text file (str)
-
-       Text is parsed using XPath, regexes, or tag attributes prior to writing.
-    """
-    if not outfilename.endswith('.txt'):
-        outfilename = outfilename + '.txt'
-
-    all_text = []  # Text must be aggregated if writing to a single output file
-    for i, infilename in enumerate(infilenames):
-        if infilename.endswith('.html'):
-            # Convert HTML to lxml object for content parsing
-            html = lh.fromstring(utils.read_files(infilename))
-            text = None
-        else:
-            html = None
-            text = utils.read_files(infilename)
-
-        if html is not None:
-            parsed_text = utils.parse_text(html, args['xpath'], args['filter'],
-                                           args['attributes'])
-        elif text is not None:
-            parsed_text = utils.parse_text(text, args['xpath'], args['filter'])
-        else:
-            if not args['quiet']:
-                if args['files']:
-                    sys.stderr.write('Failed to parse file {0}.\n'
-                                     .format(outfilename.replace(
-                                         '.txt', '.html')))
-                else:
-                    sys.stderr.write('Failed to parse PART{0}.html.\n'
-                                     .format(i+1))
-
-        if parsed_text:
-            if args['multiple']:
-                if not args['quiet']:
-                    print('Attempting to write to {0}.'.format(outfilename))
-                utils.remove_file(outfilename)
-                utils.write_file(parsed_text, outfilename)
-            elif args['single']:
-                all_text += parsed_text
-                # Newline added between multiple files being aggregated
-                if len(infilenames) > 1 and i < len(infilenames) - 1:
-                    all_text.append('\n')
-
-    # Write all text to a single output file
-    if args['single'] and all_text:
-        if not args['quiet']:
-            print('Attempting to write {0} page(s) to {1}.'
-                  .format(len(infilenames), outfilename))
-        utils.remove_file(outfilename)
-        utils.write_file(all_text, outfilename)
-
-
 def write_files(args, infilenames, outfilename):
-    """Write scraped or local files to text or PDF
+    """Write scraped or local files to text or PDF, or print text output
 
        Keyword arguments:
        args -- program arguments (dict)
@@ -338,7 +363,9 @@ def write_files(args, infilenames, outfilename):
 
        Remove PART(#).html files after conversion unless otherwise specified.
     """
-    if args['pdf']:
+    if args['print']:
+        print_text(args, infilenames)
+    elif args['pdf']:
         write_to_pdf(args, infilenames, outfilename)
     elif args['text']:
         write_to_text(args, infilenames, outfilename)
@@ -519,10 +546,10 @@ def command_line_runner():
         parser.print_help()
         return
 
-    if not args['text'] and not args['pdf'] and not args['html']:
-        valid_types = ['text', 'pdf', 'html']
+    if not any((args['print'], args['text'], args['pdf'], args['html'])):
+        valid_types = ('print', 'text', 'pdf', 'html')
         try:
-            filetype = input('Save output as ({0}): '
+            filetype = input('Print or save output as ({0}): '
                              .format(', '.join(valid_types))).lower()
             while filetype not in valid_types:
                 filetype = input('Invalid entry. Choose from ({0}): '
