@@ -2,7 +2,8 @@
 dist/
 build/
 *.egg-info
-*.swp
-*.bts
 *.bak
-local*
+*.sw*
+*.local*
+*.bts
+.idea/
