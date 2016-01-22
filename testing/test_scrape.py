@@ -2,8 +2,10 @@
 
 """Unit tests for scrape"""
 
+import glob
 import os
 import shutil
+import sys
 import unittest
 
 from scrape import scrape, utils
@@ -12,12 +14,21 @@ from scrape import scrape, utils
 
 class ScrapeTestCase(unittest.TestCase):
     
-    def call_scrape(self, cmd, filetype, num_files=False): 
+    def call_scrape(self, cmd, filetype, num_files=None, overwrite=False): 
+        if not isinstance(cmd, list):
+            cmd = [cmd]
         parser = scrape.get_parser()
         args = vars(parser.parse_args(cmd))
+
+        if filetype == 'txt':
+            filetype = 'text'
         args[filetype] = True
-        if num_files:
+        if num_files is not None:
             args[num_files] = True
+        if overwrite:
+            args['overwrite'] = True
+        else:
+            args['no_overwrite'] = True
         return scrape.scrape(args)
 
     def setUp(self):
@@ -49,9 +60,11 @@ class ScrapeTestCase(unittest.TestCase):
         else:
             shutil.rmtree(subdir_path)
 
-    def get_single_outfilename(self):
+    def get_single_outfilename(self, query):
         """Use first possible entry in query as filename"""
-        for arg in self.query:
+        if not isinstance(query, list):
+            query = [query]
+        for arg in query:
             if arg in self.html_files or arg in self.text_files:
                 return ('.'.join(arg.split('.')[:-1])).lower()
         sys.stderr.write('Failed to construct a single out filename.\n')
@@ -66,7 +79,7 @@ class ScrapeTestCase(unittest.TestCase):
 
     def test_query_to_single_pdf(self):
         self.call_scrape(self.query, 'pdf', 'single')
-        outfilename = self.get_single_outfilename() + '.pdf'
+        outfilename = self.get_single_outfilename(self.query) + '.pdf'
         self.assert_exists_and_rm(outfilename)
 
     def test_html_to_pdf(self):
@@ -94,7 +107,7 @@ class ScrapeTestCase(unittest.TestCase):
     
     def test_query_to_single_text(self):
         self.call_scrape(self.query, 'text', 'single')
-        outfilename = self.get_single_outfilename() + '.txt'
+        outfilename = self.get_single_outfilename(self.query) + '.txt'
         self.assert_exists_and_rm(outfilename)
 
     def test_html_to_text(self):
@@ -104,6 +117,21 @@ class ScrapeTestCase(unittest.TestCase):
         # Assert new files have been created, then assert their deletion
         for outfilename in outfilenames:
             self.assert_exists_and_rm(outfilename)
+
+    def test_file_overwrite(self):
+        infilename = self.text_files[0]
+        for filetype in ('txt', 'pdf'):
+            outfilename = self.get_single_outfilename(infilename)
+            base_outfilename = os.path.splitext(outfilename)[-2]
+            prev_files = set(glob.glob('*{0}*.{1}'.format(base_outfilename,
+                                                          filetype)))
+
+            # Overwriting file means prev_files == curr_files
+            self.call_scrape(infilename, filetype, overwrite=True)
+            print('curr files are: ')
+            curr_files = set(glob.glob('*{0}*.{1}'.format(base_outfilename,
+                                                          filetype)))
+            self.assertEqual(curr_files, prev_files)
 
 
 if __name__ == '__main__':

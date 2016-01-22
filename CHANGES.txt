@@ -1,3 +1,10 @@
+0.7.7
+------
+
+ - no longer defaults to overwriting files, added program flags/a prompt
+ - adding renaming mechanism if choosing to not overwrite a file
+ - some function reorganizing
+
 0.7.6
 ------
 

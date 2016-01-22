@@ -10,10 +10,6 @@ import os
 import sys
 
 import lxml.html as lh
-try:
-    import pdfkit as pk
-except ImportError:
-    pass
 
 from scrape.orderedset import OrderedSet
 from scrape import utils
@@ -56,8 +52,12 @@ def get_parser():
                         help='allow crawler to visit any domain')
     parser.add_argument('-ni', '--no-images', action='store_true',
                         help='do not save page images')
+    parser.add_argument('-no', '--no-overwrite', action='store_true',
+                        help='do not overwrite files if they exist')
     parser.add_argument('-o', '--out', type=str, nargs='*',
                         help='specify outfile names')
+    parser.add_argument('-ow', '--overwrite', action='store_true',
+                        help='overwrite a file if it exists')
     parser.add_argument('-p', '--pdf', help='write files as pdf',
                         action='store_true')
     parser.add_argument('-pt', '--print', help='print text output',
@@ -178,36 +178,6 @@ def crawl(args, seed_url, seed_domain):
     return utils.get_part_filenames(curr_part_num, prev_part_num)
 
 
-def get_parsed_text(args, infilename):
-    """Parse and return text content of infiles
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- name of user-inputted and/or downloaded file (str)
-
-       Return a list of strings of text.
-    """
-    parsed_text = []
-    if infilename.endswith('.html'):
-        # Convert HTML to lxml object for content parsing
-        html = lh.fromstring(utils.read_files(infilename))
-        text = None
-    else:
-        html = None
-        text = utils.read_files(infilename)
-
-    if html is not None:
-        parsed_text = utils.parse_text(html, args['xpath'], args['filter'],
-                                       args['attributes'])
-    elif text is not None:
-        parsed_text = utils.parse_text(text, args['xpath'], args['filter'])
-    else:
-        if not args['quiet']:
-            sys.stderr.write('Failed to parse text from {0}.\n'
-                             .format(infilename))
-    return parsed_text
-
-
 def print_text(args, infilenames):
     """Print text content of infiles to stdout
 
@@ -216,7 +186,7 @@ def print_text(args, infilenames):
        infilenames -- names of user-inputted and/or downloaded files (list)
     """
     for infilename in infilenames:
-        parsed_text = get_parsed_text(args, infilename)
+        parsed_text = utils.get_parsed_text(args, infilename)
         if parsed_text:
             for line in parsed_text:
                 print(line)
@@ -224,7 +194,7 @@ def print_text(args, infilenames):
 
 
 def write_to_text(args, infilenames, outfilename):
-    """Write files to text
+    """Safely write files to text
 
        Keyword arguments:
        args -- program arguments (dict)
@@ -235,121 +205,28 @@ def write_to_text(args, infilenames, outfilename):
     """
     if not outfilename.endswith('.txt'):
         outfilename = outfilename + '.txt'
-
-    all_text = []  # Text must be aggregated if writing to a single output file
-    for i, infilename in enumerate(infilenames):
-        parsed_text = get_parsed_text(args, infilename)
-        if parsed_text:
-            if args['multiple']:
-                if not args['quiet']:
-                    print('Attempting to write to {0}.'.format(outfilename))
-                utils.remove_file(outfilename)
-                utils.write_file(parsed_text, outfilename)
-            elif args['single']:
-                all_text += parsed_text
-                # Newline added between multiple files being aggregated
-                if len(infilenames) > 1 and i < len(infilenames) - 1:
-                    all_text.append('\n')
-
-    # Write all text to a single output file
-    if args['single'] and all_text:
-        if not args['quiet']:
-            print('Attempting to write {0} page(s) to {1}.'
-                  .format(len(infilenames), outfilename))
-        utils.remove_file(outfilename)
-        utils.write_file(all_text, outfilename)
-
-
-def xpath_write_to_pdf(args, infilenames, outfilename, options):
-    """Filter HTML files by XPath and then write files to PDF using pdfkit
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output PDF file (str)
-       options -- pdfkit options (dict)
-
-       Convert files to PDF using pdfkit.
-    """
-    if args['multiple']:
-        # Multiple files are written one at a time, so infilenames will
-        # never contain more than one file here
-        infilename = infilenames[0]
-        html = None
-        if not args['quiet']:
-            print('Attempting to write to {0}.'.format(outfilename))
-        else:
-            options['quiet'] = None
-
-        html = utils.parse_html(utils.read_files(infilename), args['xpath'])
-        if isinstance(html, list):
-            if isinstance(html[0], str):
-                pk.from_string('\n'.join(html), outfilename, options=options)
-            else:
-                pk.from_string('\n'.join(lh.tostring(x) for x in html),
-                               outfilename, options=options)
-        elif isinstance(html, str):
-            pk.from_string(html, outfilename, options=options)
-        else:
-            pk.from_string(lh.tostring(html), outfilename, options=options)
-    elif args['single']:
-        if not args['quiet']:
-            print('Attempting to write {0} page(s) to {1}.'
-                  .format(len(infilenames), outfilename))
-        else:
-            options['quiet'] = None
-
-        html = utils.parse_html(utils.read_files(infilenames), args['xpath'])
-        if isinstance(html, list):
-            if isinstance(html[0], str):
-                pk.from_string('\n'.join(html), outfilename, options=options)
-            else:
-                pk.from_string('\n'.join(lh.tostring(x) for x in html),
-                               outfilename, options=options)
-        elif isinstance(html, str):
-            pk.from_string(html, outfilename, options=options)
-        else:
-            pk.from_string(lh.tostring(html), outfilename, options=options)
+    try:
+        utils.write_text_file(args, infilenames, outfilename)
+    except (KeyboardInterrupt, Exception):
+        if args['urls']:
+            utils.remove_part_files()
+        raise
 
 
 def write_to_pdf(args, infilenames, outfilename):
-    """Write files to PDF using pdfkit
+    """Safely write files to PDF using pdfkit
 
        Keyword arguments:
        args -- program arguments (dict)
        infilenames -- names of user-inputted and/or downloaded files (list)
        outfilename -- name of output PDF file (str)
 
-       Convert files to PDF using pdfkit.
+       Write and convert files to PDF.
     """
     if not outfilename.endswith('.pdf'):
         outfilename = outfilename + '.pdf'
-    utils.remove_file(outfilename)
-    options = {}
-    # Only ignore errors if there is more than one page
-    # This prevents an empty write if an error occurs
-    if len(infilenames) > 1:
-        options['ignore-load-errors'] = None
-
     try:
-        if args['xpath']:
-            xpath_write_to_pdf(args, infilenames, outfilename, options)
-        elif args['multiple']:
-            # Multiple files are written one at a time, so infilenames will
-            # never contain more than one file here
-            infilename = infilenames[0]
-            if not args['quiet']:
-                print('Attempting to write to {0}.'.format(outfilename))
-            else:
-                options['quiet'] = None
-            pk.from_file(infilename, outfilename, options=options)
-        elif args['single']:
-            if not args['quiet']:
-                print('Attempting to write {0} page(s) to {1}.'
-                      .format(len(infilenames), outfilename))
-            else:
-                options['quiet'] = None
-            pk.from_file(infilenames, outfilename, options=options)
+        utils.write_pdf_file(args, infilenames, outfilename)
     except (KeyboardInterrupt, Exception):
         if args['urls']:
             utils.remove_part_files()

@@ -11,6 +11,10 @@ import sys
 import time
 
 import lxml.html as lh
+try:
+    import pdfkit as pk
+except ImportError:
+    pass
 import requests
 
 
@@ -20,6 +24,7 @@ if SYS_VERSION == 2:
     from urlparse import urlparse, urljoin
 
     range = xrange
+    input = raw_input
 else:
     from urllib.request import getproxies
     from urllib.parse import urlparse, urljoin
@@ -332,6 +337,24 @@ def add_url_ext(url):
     return url
 
 
+def confirm_input(user_input):
+    """Check user input for yes, no, or an exit signal"""
+    if isinstance(user_input, list):
+        user_input = ''.join(user_input)
+
+    try:
+        u_inp = user_input.lower().strip()
+    except AttributeError:
+        u_inp = user_input
+
+    # Check for exit signal
+    if u_inp in ('q', 'quit', 'exit'):
+        sys.exit()
+    if u_inp in ('y', 'yes'):
+        return True
+    return False
+
+
 def remove_file(filename):
     """Remove a file from disk"""
     try:
@@ -341,19 +364,198 @@ def remove_file(filename):
         return False
 
 
-def write_file(text, filename):
-    """Write a file to disk"""
+def modify_filename_id(filename):
+    """Modify filename to have a unique numerical identifier"""
+    # Split the filename and its extension
+    split_filename = os.path.splitext(filename)
+    id_num_re = re.compile('(\(\d\))')
+    id_num = re.findall(id_num_re, split_filename[-2])
+    if id_num:
+        new_id_num = int(id_num[-1].lstrip('(').rstrip(')')) + 1
+        # Reconstruct filename with incremented id and its extension
+        filename = ''.join((re.sub(id_num_re, '({0})'.format(new_id_num),
+                                   split_filename[-2]), split_filename[-1]))
+    else:
+        # Split the filename and its extension
+        split_filename = os.path.splitext(filename)
+        # Reconstruct filename with new id and its extension
+        filename = ''.join(('{0} (2)'.format(split_filename[-2]),
+                            split_filename[-1]))
+    return filename
+
+
+def overwrite_file_check(args, filename):
+    """If filename exists, overwrite or modify it to be unique"""
+    if not args['overwrite'] and os.path.exists(filename):
+        # Confirm overwriting of the file, or modify filename
+        if args['no_overwrite']:
+            overwrite = False
+        else:
+            try:
+                overwrite = confirm_input(input('Overwrite {0}? (yes/no): '
+                                                .format(filename)))
+            except (KeyboardInterrupt, EOFError):
+                sys.exit()
+        if not overwrite:
+            new_filename = modify_filename_id(filename)
+            while os.path.exists(new_filename):
+                new_filename = modify_filename_id(new_filename)
+            return new_filename
+    return filename
+
+
+def write_pdf_file(args, infilenames, outfilename):
+    """Write PDF file to disk using pdfkit
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output PDF file (str)
+    """
+    # Modifies filename if user does not wish to overwrite
+    outfilename = overwrite_file_check(args, outfilename)
+
+    options = {}
+    # Only ignore errors if there is more than one page
+    # This prevents an empty write if an error occurs
+    if len(infilenames) > 1:
+        options['ignore-load-errors'] = None
+
     try:
-        if not text:
-            return False
-        with open(filename, 'a') as outfile:
-            for line in text:
+        if args['multiple']:
+            # Multiple files are written one at a time, so infilenames will
+            # never contain more than one file here
+            infilename = infilenames[0]
+            if not args['quiet']:
+                print('Attempting to write to {0}.'.format(outfilename))
+            else:
+                options['quiet'] = None
+
+            if args['xpath']:
+                # Process HTML with XPath before writing
+                html = parse_html(read_files(infilename), args['xpath'])
+                if isinstance(html, list):
+                    if isinstance(html[0], str):
+                        pk.from_string('\n'.join(html), outfilename,
+                                       options=options)
+                    else:
+                        pk.from_string('\n'.join(lh.tostring(x) for x in html),
+                                       outfilename, options=options)
+                elif isinstance(html, str):
+                    pk.from_string(html, outfilename, options=options)
+                else:
+                    pk.from_string(lh.tostring(html), outfilename,
+                                   options=options)
+            else:
+                pk.from_file(infilename, outfilename, options=options)
+        elif args['single']:
+            if not args['quiet']:
+                print('Attempting to write {0} page(s) to {1}.'
+                      .format(len(infilenames), outfilename))
+            else:
+                options['quiet'] = None
+
+            if args['xpath']:
+                # Process HTML with XPath before writing
+                html = parse_html(read_files(infilenames), args['xpath'])
+                if isinstance(html, list):
+                    if isinstance(html[0], str):
+                        pk.from_string('\n'.join(html), outfilename,
+                                       options=options)
+                    else:
+                        pk.from_string('\n'.join(lh.tostring(x) for x in html),
+                                       outfilename, options=options)
+                elif isinstance(html, str):
+                    pk.from_string(html, outfilename, options=options)
+                else:
+                    pk.from_string(lh.tostring(html), outfilename,
+                                   options=options)
+            else:
+                pk.from_file(infilenames, outfilename, options=options)
+        return True
+    except (OSError, IOError) as err:
+        sys.stderr.write('An error occurred while writing {0}:\n{1}'
+                         .format(outfilename, str(err)))
+        return False
+
+
+def write_file(data, outfilename):
+    """Write a file to disk"""
+    if not data:
+        return False
+    try:
+        with open(outfilename, 'w') as outfile:
+            for line in data:
                 if line:
                     outfile.write(line)
         return True
-    except (OSError, IOError):
-        sys.stderr.write('Failed to write {0}.\n'.format(filename))
+    except (OSError, IOError) as err:
+        sys.stderr.write('An error occurred while writing {0}:\n{1}'
+                         .format(outfilename, str(err)))
         return False
+
+
+def get_parsed_text(args, infilename):
+    """Parse and return text content of infiles
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- name of user-inputted and/or downloaded file (str)
+
+       Return a list of strings of text.
+    """
+    parsed_text = []
+    if infilename.endswith('.html'):
+        # Convert HTML to lxml object for content parsing
+        html = lh.fromstring(read_files(infilename))
+        text = None
+    else:
+        html = None
+        text = read_files(infilename)
+
+    if html is not None:
+        parsed_text = parse_text(html, args['xpath'], args['filter'],
+                                 args['attributes'])
+    elif text is not None:
+        parsed_text = parse_text(text, args['xpath'], args['filter'])
+    else:
+        if not args['quiet']:
+            sys.stderr.write('Failed to parse text from {0}.\n'
+                             .format(infilename))
+    return parsed_text
+
+
+def write_text_file(args, infilenames, outfilename):
+    """Write text file to disk
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output text file (str)
+    """
+    # Modifies filename if user does not wish to overwrite
+    outfilename = overwrite_file_check(args, outfilename)
+
+    all_text = []  # Text must be aggregated if writing to a single output file
+    for i, infilename in enumerate(infilenames):
+        parsed_text = get_parsed_text(args, infilename)
+        if parsed_text:
+            if args['multiple']:
+                if not args['quiet']:
+                    print('Attempting to write to {0}.'.format(outfilename))
+                write_file(parsed_text, outfilename)
+            elif args['single']:
+                all_text += parsed_text
+                # Newline added between multiple files being aggregated
+                if len(infilenames) > 1 and i < len(infilenames) - 1:
+                    all_text.append('\n')
+
+    # Write all text to a single output file
+    if args['single'] and all_text:
+        if not args['quiet']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(infilenames), outfilename))
+        write_file(all_text, outfilename)
 
 
 def mkdir_and_cd(dirname):

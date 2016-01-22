@@ -22,8 +22,8 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Usage
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
                      [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
-                     [-ht] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-ni]
-                     [-o [OUT [OUT ...]]] [-p] [-pt] [-q] [-s] [-t] [-v]
+                     [-ht] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-ni] [-no]
+                     [-o [OUT [OUT ...]]] [-ow] [-p] [-pt] [-q] [-s] [-t] [-v]
                      [-x [XPATH]]
                      [QUERY [QUERY ...]]
 
@@ -49,8 +49,10 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
                             max number of links to scrape
       -n, --nonstrict       allow crawler to visit any domain
       -ni, --no-images      do not save page images
+      -no, --no-overwrite   do not overwrite files if they exist
       -o [OUT [OUT ...]], --out [OUT [OUT ...]]
                             specify outfile names
+      -ow, --overwrite      overwrite a file if it exists
       -p, --pdf             write files as pdf
       -pt, --print          print text output
       -q, --quiet           suppress program output
