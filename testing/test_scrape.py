@@ -2,7 +2,6 @@
 
 """Unit tests for scrape"""
 
-import glob
 import os
 import shutil
 import sys
@@ -14,21 +13,15 @@ from scrape import scrape, utils
 
 class ScrapeTestCase(unittest.TestCase):
     
-    def call_scrape(self, cmd, filetype, num_files=None, overwrite=False): 
+    def call_scrape(self, cmd, filetype, num_files=None): 
         if not isinstance(cmd, list):
             cmd = [cmd]
         parser = scrape.get_parser()
         args = vars(parser.parse_args(cmd))
 
-        if filetype == 'txt':
-            filetype = 'text'
         args[filetype] = True
         if num_files is not None:
             args[num_files] = True
-        if overwrite:
-            args['overwrite'] = True
-        else:
-            args['no_overwrite'] = True
         return scrape.scrape(args)
 
     def setUp(self):
@@ -117,21 +110,6 @@ class ScrapeTestCase(unittest.TestCase):
         # Assert new files have been created, then assert their deletion
         for outfilename in outfilenames:
             self.assert_exists_and_rm(outfilename)
-
-    def test_file_overwrite(self):
-        infilename = self.text_files[0]
-        for filetype in ('txt', 'pdf'):
-            outfilename = self.get_single_outfilename(infilename)
-            base_outfilename = os.path.splitext(outfilename)[-2]
-            prev_files = set(glob.glob('*{0}*.{1}'.format(base_outfilename,
-                                                          filetype)))
-
-            # Overwriting file means prev_files == curr_files
-            self.call_scrape(infilename, filetype, overwrite=True)
-            print('curr files are: ')
-            curr_files = set(glob.glob('*{0}*.{1}'.format(base_outfilename,
-                                                          filetype)))
-            self.assertEqual(curr_files, prev_files)
 
 
 if __name__ == '__main__':
