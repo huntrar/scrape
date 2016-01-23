@@ -19,6 +19,7 @@ class ScrapeTestCase(unittest.TestCase):
         parser = scrape.get_parser()
         args = vars(parser.parse_args(cmd))
 
+        args['overwrite'] = True  # Avoid overwrite prompt
         args[filetype] = True
         if num_files is not None:
             args[num_files] = True
