@@ -274,8 +274,6 @@ def scrape(args):
                              and not utils.check_scheme(x) else x
                              for x in urls_with_exts]
             args['urls'] = [x for x in args['query'] if x not in args['files']]
-            args['urls'] = [utils.add_scheme(x) if not utils.check_scheme(x)
-                            else x for x in urls_with_exts]
 
         # Print error if attempting to convert local files to HTML
         if args['files'] and args['html']:
