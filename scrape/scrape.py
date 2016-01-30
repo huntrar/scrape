@@ -267,16 +267,20 @@ def scrape(args):
             else:
                 args['urls'].append(arg.strip('/'))
 
+        if args['urls']:
+            # Add URL extensions and schemes and update query and URL's
+            urls_with_exts = [utils.add_url_ext(x) for x in args['urls']]
+            args['query'] = [utils.add_scheme(x) if x in args['urls']
+                             and not utils.check_scheme(x) else x
+                             for x in urls_with_exts]
+            args['urls'] = [x for x in args['query'] if x not in args['files']]
+            args['urls'] = [utils.add_scheme(x) if not utils.check_scheme(x)
+                            else x for x in urls_with_exts]
+
         # Print error if attempting to convert local files to HTML
         if args['files'] and args['html']:
             sys.stderr.write('Cannot convert local files to HTML.\n')
             args['files'] = []
-
-        if args['urls']:
-            # Add URL extensions and schemes
-            urls_with_exts = [utils.add_url_ext(x) for x in args['urls']]
-            args['urls'] = [utils.add_scheme(x) if not utils.check_scheme(x)
-                            else x for x in urls_with_exts]
 
         if args['single']:
             return write_single_file(args, base_dir)

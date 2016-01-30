@@ -1,3 +1,8 @@
+0.8.0
+------
+
+ - fixed bug where added url schema not reflected in query
+
 0.7.9
 ------
 
