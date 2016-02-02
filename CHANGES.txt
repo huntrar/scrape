@@ -1,3 +1,8 @@
+0.8.2
+------
+
+ - ignore-load-errors removed from wkhtmltopdf executable
+
 0.8.1
 ------
 

@@ -414,13 +414,7 @@ def write_pdf_file(args, infilenames, outfilename):
     """
     # Modifies filename if user does not wish to overwrite
     outfilename = overwrite_file_check(args, outfilename)
-
     options = {}
-    # Only ignore errors if there is more than one page
-    # This prevents an empty write if an error occurs
-    if len(infilenames) > 1:
-        options['ignore-load-errors'] = None
-
     try:
         if args['multiple']:
             # Multiple files are written one at a time, so infilenames will
