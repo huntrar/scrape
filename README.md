@@ -27,40 +27,40 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
                      [-x [XPATH]]
                      [QUERY [QUERY ...]]
 
-a command-line web scraping tool
+    a command-line web scraping tool
 
-positional arguments:
-  QUERY                 URL's/files to scrape
+    positional arguments:
+      QUERY                 URL's/files to scrape
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
-                        extract text using tag attributes
-  -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
-                        regexp rules for following new pages
-  -ca, --crawl-all      crawl all pages
-  -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
-                        regexp rules for filtering text
-  -ht, --html           write files as HTML
-  -m, --multiple        save to multiple files
-  -mp MAXPAGES, --maxpages MAXPAGES
-                        max number of pages to crawl
-  -ml MAXLINKS, --maxlinks MAXLINKS
-                        max number of links to scrape
-  -n, --nonstrict       allow crawler to visit any domain
-  -ni, --no-images      do not save page images
-  -no, --no-overwrite   do not overwrite files if they exist
-  -o [OUT [OUT ...]], --out [OUT [OUT ...]]
-                        specify outfile names
-  -ow, --overwrite      overwrite a file if it exists
-  -p, --pdf             write files as pdf
-  -pt, --print          print text output
-  -q, --quiet           suppress program output
-  -s, --single          save to a single file
-  -t, --text            write files as text (default)
-  -v, --version         display current version
-  -x [XPATH], --xpath [XPATH]
-                        filter HTML using XPath
+    optional arguments:
+      -h, --help            show this help message and exit
+      -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
+                            extract text using tag attributes
+      -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
+                            regexp rules for following new pages
+      -ca, --crawl-all      crawl all pages
+      -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
+                            regexp rules for filtering text
+      -ht, --html           write files as HTML
+      -m, --multiple        save to multiple files
+      -mp MAXPAGES, --maxpages MAXPAGES
+                            max number of pages to crawl
+      -ml MAXLINKS, --maxlinks MAXLINKS
+                            max number of links to scrape
+      -n, --nonstrict       allow crawler to visit any domain
+      -ni, --no-images      do not save page images
+      -no, --no-overwrite   do not overwrite files if they exist
+      -o [OUT [OUT ...]], --out [OUT [OUT ...]]
+                            specify outfile names
+      -ow, --overwrite      overwrite a file if it exists
+      -p, --pdf             write files as pdf
+      -pt, --print          print text output
+      -q, --quiet           suppress program output
+      -s, --single          save to a single file
+      -t, --text            write files as text (default)
+      -v, --version         display current version
+      -x [XPATH], --xpath [XPATH]
+                            filter HTML using XPath
 
 ## Author
 * Hunter Hammond (huntrar@gmail.com)

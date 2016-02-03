@@ -1,3 +1,8 @@
+0.8.3
+------
+
+ - fixed bad formatting in readme usage
+
 0.8.2
 ------
 
