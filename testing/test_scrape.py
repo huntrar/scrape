@@ -20,6 +20,8 @@ class ScrapeTestCase(unittest.TestCase):
         args = vars(parser.parse_args(cmd))
 
         args['overwrite'] = True  # Avoid overwrite prompt
+        if args['crawl'] or args['crawl_all']:
+            args['no_images'] = True  # Avoid save image prompt when crawling
         args[filetype] = True
         if num_files is not None:
             args[num_files] = True
