@@ -71,6 +71,21 @@ def get_parser():
     return parser
 
 
+def print_text(args, infilenames):
+    """Print text content of infiles to stdout
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+    """
+    for infilename in infilenames:
+        parsed_text = utils.get_parsed_text(args, infilename)
+        if parsed_text:
+            for line in parsed_text:
+                print(line)
+            print('')
+
+
 def write_to_text(args, infilenames, outfilename):
     """Safely write files to text
 

@@ -114,18 +114,3 @@ def crawl(args, seed_url, seed_domain):
                      seed_domain)
     curr_part_num = utils.get_num_part_files()
     return utils.get_part_filenames(curr_part_num, prev_part_num)
-
-
-def print_text(args, infilenames):
-    """Print text content of infiles to stdout
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-    """
-    for infilename in infilenames:
-        parsed_text = utils.get_parsed_text(args, infilename)
-        if parsed_text:
-            for line in parsed_text:
-                print(line)
-            print('')
