@@ -22,9 +22,9 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Usage
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
                      [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
-                     [-ht] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-ni] [-no]
-                     [-o [OUT [OUT ...]]] [-ow] [-p] [-pt] [-q] [-s] [-t] [-v]
-                     [-x [XPATH]]
+                     [-ht] [-i] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-ni]
+                     [-no] [-o [OUT [OUT ...]]] [-ow] [-p] [-pt] [-q] [-s] [-t]
+                     [-v] [-x [XPATH]]
                      [QUERY [QUERY ...]]
 
     a command-line web scraping tool
@@ -42,6 +42,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
                             regexp rules for filtering text
       -ht, --html           write files as HTML
+      -i, --images          save page images
       -m, --multiple        save to multiple files
       -mp MAXPAGES, --maxpages MAXPAGES
                             max number of pages to crawl
