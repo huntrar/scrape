@@ -38,6 +38,8 @@ def get_parser():
                         help='regexp rules for filtering text')
     parser.add_argument('-ht', '--html', help='write files as HTML',
                         action='store_true')
+    parser.add_argument('-i', '--images', action='store_true',
+                        help='save page images')
     parser.add_argument('-m', '--multiple', help='save to multiple files',
                         action='store_true')
     parser.add_argument('-mp', '--maxpages', type=int,
@@ -332,6 +334,21 @@ def command_line_runner():
         except (KeyboardInterrupt, EOFError):
             return
         args[filetype] = True
+
+    # Ask user if they want to save images when crawling due to its overhead
+    # This is only applicable when saving to PDF or HTML formats
+    if (args['pdf'] or args['html']) and (args['crawl'] or args['crawl_all']):
+        if not args['images'] and not args['no_images']:
+            save_msg = ('Choosing to save images will greatly slow the'
+                        ' crawling process.\nSave images anyways? (y/n): ')
+            save_images = utils.confirm_input(input(save_msg))
+            if save_images:
+                args['images'] = True
+                args['no_images'] = False
+            else:
+                args['no_images'] = True
+                args['images'] = False
+
     scrape(args)
 
 
