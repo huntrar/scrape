@@ -1,3 +1,8 @@
+0.8.6
+------
+
+ - added environ variable SCRAPE_DISABLE_IMGS to not save images
+
 0.8.5
 ------
 

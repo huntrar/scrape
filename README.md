@@ -69,7 +69,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Notes
 * Supports both Python 2.x and Python 3.x.
 * Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
-* Images are automatically included when saving as PDF or HTML; this involves making additional HTTP requests, adding a significant amount of processing time. If you wish to forgo this feature use the --no-images flag.
+* Images are automatically included when saving as PDF or HTML; this involves making additional HTTP requests, adding a significant amount of processing time. If you wish to forgo this feature use the --no-images flag, or set the environment variable SCRAPE_DISABLE_IMGS.
 * To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
 * Crawling can be stopped by Ctrl-C or alternatively by setting the number of pages or links to be crawled using --maxpages and --maxlinks. A page may contain zero or many links to more pages.

@@ -5,7 +5,7 @@
 """
 
 from __future__ import absolute_import, print_function
-import argparse as argp
+from argparse import ArgumentParser
 import os
 import sys
 
@@ -24,8 +24,7 @@ if SYS_VERSION == 2:
 
 def get_parser():
     """Parse command-line arguments"""
-    parser = argp.ArgumentParser(
-        description='a command-line web scraping tool')
+    parser = ArgumentParser(description='a command-line web scraping tool')
     parser.add_argument('query', metavar='QUERY', type=str, nargs='*',
                         help='URL\'s/files to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
@@ -323,6 +322,7 @@ def command_line_runner():
         parser.print_help()
         return
 
+    # Prompt user for filetype if none specified
     if not any((args['print'], args['text'], args['pdf'], args['html'])):
         valid_types = ('print', 'text', 'pdf', 'html')
         try:
@@ -335,13 +335,20 @@ def command_line_runner():
             return
         args[filetype] = True
 
+    # Save images unless uset sets environ variable SCRAPE_DISABLE_IMGS
+    if os.getenv('SCRAPE_DISABLE_IMGS'):
+        args['no_images'] = True
+
     # Ask user if they want to save images when crawling due to its overhead
     # This is only applicable when saving to PDF or HTML formats
     if (args['pdf'] or args['html']) and (args['crawl'] or args['crawl_all']):
         if not args['images'] and not args['no_images']:
             save_msg = ('Choosing to save images will greatly slow the'
                         ' crawling process.\nSave images anyways? (y/n): ')
-            save_images = utils.confirm_input(input(save_msg))
+            try:
+                save_images = utils.confirm_input(input(save_msg))
+            except (KeyboardInterrupt, EOFError):
+                return
             if save_images:
                 args['images'] = True
                 args['no_images'] = False
