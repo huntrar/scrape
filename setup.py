@@ -39,6 +39,8 @@ setup(
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
@@ -46,6 +48,8 @@ setup(
         "Programming Language :: Python :: 3.2",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Topic :: Text Processing",
     ],
     keywords='scrape crawl download webpage website pdf text html filter regex lxml',
     author='Hunter Hammond',
@@ -63,6 +67,6 @@ setup(
     install_requires=[
         'lxml',
         'pdfkit',
-        'requests'
+        'requests',
     ]
 )
