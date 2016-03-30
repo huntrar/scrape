@@ -2,7 +2,7 @@
 
 ## a command-line web scraping tool
 
-scrape is a rule-based web crawler and content extractor for the command-line. Rules may be set for controlling web traversal or simply filtering content. Generally, rules are defined as regular expressions and/or XPath language, among other options. Any content extracted may be consolidated to one or many files, with support for text, pdf, and HTML formats.
+scrape is a rule-based web crawler and information extractor for the command-line. Regular expressions are used to control web traversal and text filtering. XPath support allows for more control over what content to extract. The acquired data may be consolidated into any number of files and in text, PDF, and/or HTML formats.
 
 ## Installation
     pip install scrape
