@@ -2,7 +2,7 @@
 
 ## a command-line web scraping tool
 
-scrape is a rule-based web crawler and information extractor for the command-line. Regular expressions are used to control web traversal and text filtering. XPath support allows for more control over what content to extract. The acquired data may be consolidated into any number of files and in text, PDF, and/or HTML formats.
+scrape is a rule-based web crawler and information extractor for the command-line. Regular expressions are used to control web traversal and text filtering. XPath support allows for more control over what content to extract. Scraped content may be consolidated into any number of files, and in text, CSV, PDF, and/or HTML formats.
 
 ## Installation
     pip install scrape
@@ -21,10 +21,10 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 
 ## Usage
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
-                     [-c [CRAWL [CRAWL ...]]] [-ca] [-f [FILTER [FILTER ...]]]
-                     [-ht] [-i] [-m] [-mp MAXPAGES] [-ml MAXLINKS] [-n] [-ni]
-                     [-no] [-o [OUT [OUT ...]]] [-ow] [-p] [-pt] [-q] [-s] [-t]
-                     [-v] [-x [XPATH]]
+                     [-c [CRAWL [CRAWL ...]]] [-ca] [-cs]
+                     [-f [FILTER [FILTER ...]]] [-ht] [-i] [-m] [-mp MAXPAGES]
+                     [-ml MAXLINKS] [-n] [-ni] [-no] [-o [OUT [OUT ...]]] [-ow]
+                     [-p] [-pt] [-q] [-s] [-t] [-v] [-x [XPATH]]
                      [QUERY [QUERY ...]]
 
     a command-line web scraping tool
@@ -39,6 +39,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
                             regexp rules for following new pages
       -ca, --crawl-all      crawl all pages
+      -cs, --csv            write files as CSV
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
                             regexp rules for filtering text
       -ht, --html           write files as HTML
@@ -58,7 +59,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -pt, --print          print text output
       -q, --quiet           suppress program output
       -s, --single          save to a single file
-      -t, --text            write files as text (default)
+      -t, --text            write files as text
       -v, --version         display current version
       -x [XPATH], --xpath [XPATH]
                             filter HTML using XPath

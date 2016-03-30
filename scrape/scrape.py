@@ -65,7 +65,7 @@ def get_parser():
                         action='store_true')
     parser.add_argument('-s', '--single', help='save to a single file',
                         action='store_true')
-    parser.add_argument('-t', '--text', help='write files as text (default)',
+    parser.add_argument('-t', '--text', help='write files as text',
                         action='store_true')
     parser.add_argument('-v', '--version', help='display current version',
                         action='store_true')
