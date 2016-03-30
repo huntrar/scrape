@@ -33,6 +33,8 @@ def get_parser():
                         help='regexp rules for following new pages')
     parser.add_argument('-ca', '--crawl-all', help='crawl all pages',
                         action='store_true')
+    parser.add_argument('-cs', '--csv', help='write files as CSV',
+                        action='store_true')
     parser.add_argument('-f', '--filter', type=str, nargs='*',
                         help='regexp rules for filtering text')
     parser.add_argument('-ht', '--html', help='write files as HTML',
@@ -87,48 +89,8 @@ def print_text(args, infilenames):
             print('')
 
 
-def write_to_text(args, infilenames, outfilename):
-    """Safely write files to text
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output text file (str)
-
-       Text is parsed using XPath, regexes, or tag attributes prior to writing.
-    """
-    if not outfilename.endswith('.txt'):
-        outfilename = outfilename + '.txt'
-    try:
-        utils.write_text_file(args, infilenames, outfilename)
-    except (KeyboardInterrupt, Exception):
-        if args['urls']:
-            utils.remove_part_files()
-        raise
-
-
-def write_to_pdf(args, infilenames, outfilename):
-    """Safely write files to PDF using pdfkit
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output PDF file (str)
-
-       Write and convert files to PDF.
-    """
-    if not outfilename.endswith('.pdf'):
-        outfilename = outfilename + '.pdf'
-    try:
-        utils.write_pdf_file(args, infilenames, outfilename)
-    except (KeyboardInterrupt, Exception):
-        if args['urls']:
-            utils.remove_part_files()
-        raise
-
-
 def write_files(args, infilenames, outfilename):
-    """Write scraped or local files to text or PDF, or print text output
+    """Write scraped or local file(s) in desired format
 
        Keyword arguments:
        args -- program arguments (dict)
@@ -137,12 +99,27 @@ def write_files(args, infilenames, outfilename):
 
        Remove PART(#).html files after conversion unless otherwise specified.
     """
-    if args['print']:
-        print_text(args, infilenames)
-    elif args['pdf']:
-        write_to_pdf(args, infilenames, outfilename)
-    elif args['text']:
-        write_to_text(args, infilenames, outfilename)
+    try:
+        if args['print']:
+            print_text(args, infilenames)
+        elif args['pdf']:
+            if not outfilename.endswith('.pdf'):
+                outfilename = outfilename + '.pdf'
+            utils.write_pdf_files(args, infilenames, outfilename)
+        elif args['csv']:
+            # CSV/text is parsed by XPath/regexes/tag attributes prior to writing
+            if not outfilename.endswith('.csv'):
+                outfilename = outfilename + '.csv'
+            utils.write_csv_files(args, infilenames, outfilename)
+        elif args['text']:
+            if not outfilename.endswith('.txt'):
+                outfilename = outfilename + '.txt'
+            utils.write_text_files(args, infilenames, outfilename)
+    except (KeyboardInterrupt, Exception):
+        if args['urls'] and not args['html']:
+            utils.remove_part_files()
+        raise
+
     if args['urls'] and not args['html']:
         utils.remove_part_files()
 
@@ -323,8 +300,8 @@ def command_line_runner():
         return
 
     # Prompt user for filetype if none specified
-    if not any((args['print'], args['text'], args['pdf'], args['html'])):
-        valid_types = ('print', 'text', 'pdf', 'html')
+    valid_types = ('print', 'text', 'csv', 'pdf', 'html')
+    if not any(args[x] for x in valid_types):
         try:
             filetype = input('Print or save output as ({0}): '
                              .format(', '.join(valid_types))).lower()

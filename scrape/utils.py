@@ -404,8 +404,8 @@ def overwrite_file_check(args, filename):
     return filename
 
 
-def write_pdf_file(args, infilenames, outfilename):
-    """Write PDF file to disk using pdfkit
+def write_pdf_files(args, infilenames, outfilename):
+    """Write PDF file(s) to disk using pdfkit
 
        Keyword arguments:
        args -- program arguments (dict)
@@ -474,7 +474,7 @@ def write_pdf_file(args, infilenames, outfilename):
 
 
 def write_file(data, outfilename):
-    """Write a file to disk"""
+    """Write a single file to disk"""
     if not data:
         return False
     try:
@@ -519,8 +519,55 @@ def get_parsed_text(args, infilename):
     return parsed_text
 
 
-def write_text_file(args, infilenames, outfilename):
-    """Write text file to disk
+def write_csv_files(args, infilenames, outfilename):
+    """Write CSV file(s) to disk
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- names of user-inputted and/or downloaded files (list)
+       outfilename -- name of output text file (str)
+    """
+    def csv_convert(line):
+        """Strip punctuation and insert commas"""
+        clean_line = []
+        strip_word = ''
+        for word in line.split(' '):
+            clean_line.append(word.strip(string.punctuation))
+        return ', '.join(clean_line)
+
+    # Modifies filename if user does not wish to overwrite
+    outfilename = overwrite_file_check(args, outfilename)
+
+    all_text = []  # Text must be aggregated if writing to a single output file
+    for i, infilename in enumerate(infilenames):
+        parsed_text = get_parsed_text(args, infilename)
+        if parsed_text:
+            if args['multiple']:
+                if not args['quiet']:
+                    print('Attempting to write to {0}.'.format(outfilename))
+
+                csv_text = [csv_convert(x) for x in parsed_text]
+                print(csv_text)
+                write_file(csv_text, outfilename)
+            elif args['single']:
+                all_text += parsed_text
+                # Newline added between multiple files being aggregated
+                if len(infilenames) > 1 and i < len(infilenames) - 1:
+                    all_text.append('\n')
+
+    # Write all text to a single output file
+    if args['single'] and all_text:
+        if not args['quiet']:
+            print('Attempting to write {0} page(s) to {1}.'
+                  .format(len(infilenames), outfilename))
+
+        csv_text = [csv_convert(x) for x in all_text]
+        print(csv_text)
+        write_file(csv_text, outfilename)
+
+
+def write_text_files(args, infilenames, outfilename):
+    """Write text file(s) to disk
 
        Keyword arguments:
        args -- program arguments (dict)
@@ -571,7 +618,7 @@ def get_num_part_files():
 
 
 def write_part_images(url, raw_html, html, filename):
-    """Write image files associated with HTML to disk and substitute filenames
+    """Write image file(s) associated with HTML to disk, substituting filenames
 
        Keywords arguments:
        url -- the URL from which the HTML has been extracted from (str)
@@ -615,7 +662,7 @@ def write_part_images(url, raw_html, html, filename):
 
 
 def write_part_file(args, url, raw_html, html=None, part_num=None):
-    """Write PART.html files to disk and save images to a PART_files directory
+    """Write PART.html file(s) to disk, images in PART_files directory
 
        Keyword arguments:
        args -- program arguments (dict)
