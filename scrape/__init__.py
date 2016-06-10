@@ -1,3 +1,3 @@
-""" scrape is a rule-based web crawler and content extractor for the command-line. Rules may be set for controlling web traversal or simply filtering content. Generally, rules are defined as regular expressions and/or XPath language, among other options. Any content extracted may be consolidated to one or many files, with support for text, pdf, and HTML formats.
+"""scrape is a rule-based web crawler and information extraction tool capable of manipulating and merging new and existing documents. XML Path Language (XPath) and regular expressions are used to define rules for filtering content and web traversal. Output can be any one of text, CSV, PDF, and/or HTML formats.
 """
-__version__ = '0.8.7'
+__version__ = '0.8.8'

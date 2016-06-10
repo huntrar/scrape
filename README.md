@@ -2,7 +2,7 @@
 
 ## a command-line web scraping tool
 
-scrape is a rule-based web crawler and information extractor for the command-line. Regular expressions are used to control web traversal and text filtering. XPath support allows for more control over what content to extract. Scraped content may be consolidated into any number of files, and in text, CSV, PDF, and/or HTML formats.
+scrape is a rule-based web crawler and information extraction tool capable of manipulating and merging new and existing documents. XML Path Language (XPath) and regular expressions are used to define rules for filtering content and web traversal. Output can be any one of text, CSV, PDF, and/or HTML formats.
 
 ## Installation
     pip install scrape
@@ -69,12 +69,13 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 
 ## Notes
 * Supports both Python 2.x and Python 3.x.
-* Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
+* Input to scrape can be links, files, or a combination of the two, allowing you to create new files constructed from both existing and newly scraped content.
+* Multiple input files/URL's are saved to multiple output files/directories by default. To consolidate them, use the --single flag.
 * Images are automatically included when saving as PDF or HTML; this involves making additional HTTP requests, adding a significant amount of processing time. If you wish to forgo this feature use the --no-images flag, or set the environment variable SCRAPE_DISABLE_IMGS.
+* Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
 * To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
 * Crawling can be stopped by Ctrl-C or alternatively by setting the number of pages or links to be crawled using --maxpages and --maxlinks. A page may contain zero or many links to more pages.
 * The text output of scraped files can be printed to stdout rather than saved by entering --print.
 * Filtering HTML can be done using --xpath, while filtering text is done by entering one or more regexps to --filter.
 * If you only want to specify specific tag attributes to extract rather than an entire XPath, use --attributes. The default choice is to extract only text attributes, but you can specify one or many different attributes (such as href, src, title, or any attribute available..).
-* Multiple files/URL's are saved to multiple output files/directories by default. To consolidate them, use the --single flag.

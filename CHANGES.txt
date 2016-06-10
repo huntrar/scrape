@@ -1,3 +1,8 @@
+0.8.8
+------
+
+ - Updated README and setup
+
 0.8.7
 ------
 
