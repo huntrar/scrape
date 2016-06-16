@@ -29,15 +29,18 @@ def get_parser():
                         help='URL\'s/files to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
                         help='extract text using tag attributes')
+    parser.add_argument('-all', '--crawl-all', help='crawl all pages',
+                        action='store_true')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
                         help='regexp rules for following new pages')
-    parser.add_argument('-ca', '--crawl-all', help='crawl all pages',
+    parser.add_argument('--csv', help='write files as CSV',
                         action='store_true')
-    parser.add_argument('-cs', '--csv', help='write files as CSV',
-                        action='store_true')
+    parser.add_argument('-cs', '--cache-size', type=int, nargs='?',
+                        help='size of link cache (default: 1000)',
+                        default=1000)
     parser.add_argument('-f', '--filter', type=str, nargs='*',
                         help='regexp rules for filtering text')
-    parser.add_argument('-ht', '--html', help='write files as HTML',
+    parser.add_argument('--html', help='write files as HTML',
                         action='store_true')
     parser.add_argument('-i', '--images', action='store_true',
                         help='save page images')

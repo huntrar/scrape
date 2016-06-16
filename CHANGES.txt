@@ -1,3 +1,8 @@
+0.8.9
+------
+
+ - Added argument for cache link size & fixed up others
+
 0.8.8
 ------
 

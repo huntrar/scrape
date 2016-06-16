@@ -10,9 +10,6 @@ from scrape.orderedset import OrderedSet
 from scrape import utils
 
 
-LINK_CACHE_SIZE = 100
-
-
 def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
     """Follow links that have not been crawled yet
 
@@ -47,7 +44,7 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
                     link_hash = utils.hash_text(''.join(page_text))
                     if link_hash in link_cache:
                         continue
-                    utils.cache_link(link_cache, link_hash, LINK_CACHE_SIZE)
+                    utils.cache_link(link_cache, link_hash, args['cache_size'])
 
                     # Find new links and remove fragments/append base url
                     # if necessary
