@@ -1,3 +1,8 @@
+0.8.11
+------
+
+ - Bugfix: Improper check of domain when being restrictive
+
 0.8.10
 ------
 

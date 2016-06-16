@@ -10,6 +10,17 @@ from scrape.orderedset import OrderedSet
 from scrape import utils
 
 
+def get_links(args, url, resp, domain):
+    """Get new links and possibly restrict them by domain"""
+    links = [utils.clean_url(u, url) for u
+             in resp.xpath('//a/@href')]
+
+    # Restrict domain
+    if not args['nonstrict']:
+        links = [x for x in links if utils.get_domain(x) == domain]
+    return links
+
+
 def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
     """Follow links that have not been crawled yet
 
@@ -48,12 +59,9 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
 
                     # Find new links and remove fragments/append base url
                     # if necessary
-                    links = [utils.clean_url(u, seed_url) for u in
-                             resp.xpath('//a/@href')]
                     crawled_ct += 1
-                    # Domain may be restricted to the seed domain
-                    if not args['nonstrict'] and seed_domain in url:
-                        links = [x for x in links if seed_domain in x]
+                    links = get_links(args, seed_url, resp, seed_domain)
+
                     # Links may be filtered by regex keywords
                     if args['crawl']:
                         links = utils.re_filter(links, args['crawl'])
@@ -90,12 +98,8 @@ def crawl(args, seed_url, seed_domain):
     raw_resp = utils.get_raw_resp(seed_url)
     if raw_resp is not None:
         resp = lh.fromstring(raw_resp)
-        # Find new links and remove fragments/append base url if necessary
-        links = [utils.clean_url(u, seed_url) for u
-                 in resp.xpath('//a/@href')]
-        # Domain may be restricted to the seed domain
-        if not args['nonstrict']:
-            links = [x for x in links if seed_domain in x]
+        links = get_links(args, seed_url, resp, seed_domain)
+
         # Links may be filtered by regex keywords
         if args['crawl']:
             for keyword in args['crawl']:
