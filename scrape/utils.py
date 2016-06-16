@@ -296,7 +296,7 @@ def add_scheme(url):
 
 def remove_scheme(url):
     """Remove scheme from URL"""
-    return url.replace('http://', '').replace('https://', '')
+    return url.replace('http://', '').replace('https://', '').rstrip('/')
 
 
 def check_scheme(url):

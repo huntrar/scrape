@@ -1,3 +1,8 @@
+0.8.10
+------
+
+ - Strip '/' from end of urls when crawling
+
 0.8.9
 ------
 
