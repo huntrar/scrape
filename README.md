@@ -20,9 +20,9 @@ or
 You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-WKHTMLTOPDF) to save files to pdf.
 
 ## Usage
-    usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]]
-                     [-c [CRAWL [CRAWL ...]]] [-ca] [-cs]
-                     [-f [FILTER [FILTER ...]]] [-ht] [-i] [-m] [-mp MAXPAGES]
+    usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]] [-all]
+                     [-c [CRAWL [CRAWL ...]]] [--csv] [-cs [CACHE_SIZE]]
+                     [-f [FILTER [FILTER ...]]] [--html] [-i] [-m] [-mp MAXPAGES]
                      [-ml MAXLINKS] [-n] [-ni] [-no] [-o [OUT [OUT ...]]] [-ow]
                      [-p] [-pt] [-q] [-s] [-t] [-v] [-x [XPATH]]
                      [QUERY [QUERY ...]]
@@ -36,13 +36,15 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -h, --help            show this help message and exit
       -a [ATTRIBUTES [ATTRIBUTES ...]], --attributes [ATTRIBUTES [ATTRIBUTES ...]]
                             extract text using tag attributes
+      -all, --crawl-all     crawl all pages
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
                             regexp rules for following new pages
-      -ca, --crawl-all      crawl all pages
-      -cs, --csv            write files as CSV
+      --csv                 write files as CSV
+      -cs [CACHE_SIZE], --cache-size [CACHE_SIZE]
+                            size of link cache (default: 1000)
       -f [FILTER [FILTER ...]], --filter [FILTER [FILTER ...]]
                             regexp rules for filtering text
-      -ht, --html           write files as HTML
+      --html                write files as HTML
       -i, --images          save page images
       -m, --multiple        save to multiple files
       -mp MAXPAGES, --maxpages MAXPAGES
