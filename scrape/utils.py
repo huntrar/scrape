@@ -294,11 +294,6 @@ def add_scheme(url):
     return 'http://{0}'.format(url)
 
 
-def remove_scheme(url):
-    """Remove scheme from URL"""
-    return url.replace('http://', '').replace('https://', '').rstrip('/')
-
-
 def check_scheme(url):
     """Check URL for a scheme"""
     if url and (url.startswith('http://') or url.startswith('https://')):
@@ -306,14 +301,25 @@ def check_scheme(url):
     return False
 
 
-def clean_url(url, base_url):
-    """Remove URL fragments and add base URL if necessary"""
+def remove_scheme(url):
+    """Remove scheme from URL"""
+    if check_scheme(url):
+        return url.replace('http://', '').replace('https://', '')
+    return url
+
+
+def clean_url(url, base_url=None):
+    """Remove URL fragments, www., and add base URL if necessary"""
     parsed_url = urlparse(url)
     fragment = '{url.fragment}'.format(url=parsed_url)
     if fragment:
         url = url.split(fragment)[0]
-    if not '{url.netloc}'.format(url=parsed_url):
+    if base_url is not None and not '{url.netloc}'.format(url=parsed_url):
         url = urljoin(base_url, url)
+
+    netloc = '{url.netloc}'.format(url=parsed_url)
+    if 'www.' in netloc:
+        url = url.replace(netloc, netloc.replace('www.', ''))
     return url.rstrip(string.punctuation)
 
 

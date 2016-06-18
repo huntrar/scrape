@@ -44,12 +44,14 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
                 break
 
             url = uncrawled_links.pop(last=False)
+
             # Compare scheme-less URLs to prevent http(s):// dupes
-            if (utils.check_scheme(url) and
-                    utils.remove_scheme(url) not in crawled_links):
+            clean_url = utils.remove_scheme(utils.clean_url(url))
+            if clean_url not in crawled_links:
                 raw_resp = utils.get_raw_resp(url)
                 if raw_resp is not None:
                     resp = lh.fromstring(raw_resp)
+
                     # Compute a hash of the page and check if it is in cache
                     page_text = utils.parse_text(resp)
                     link_hash = utils.hash_text(''.join(page_text))
@@ -67,7 +69,7 @@ def follow_links(args, uncrawled_links, crawled_links, seed_url, seed_domain):
                         links = utils.re_filter(links, args['crawl'])
 
                     uncrawled_links.update(links)
-                    crawled_links.add(utils.remove_scheme(url))
+                    crawled_links.add(clean_url)
                     utils.write_part_file(args, url, raw_resp, resp,
                                           len(crawled_links))
                     if not args['quiet']:
@@ -106,7 +108,7 @@ def crawl(args, seed_url, seed_domain):
                 links = [x for x in links if keyword in x]
 
         uncrawled_links.update(links)
-        crawled_links.add(utils.remove_scheme(seed_url))
+        crawled_links.add(utils.remove_scheme(utils.clean_url(seed_url)))
         utils.write_part_file(args, seed_url, raw_resp, resp,
                               len(crawled_links))
         if not args['quiet']:
