@@ -51,7 +51,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Topic :: Text Processing",
     ],
-    keywords='web crawler scraper scrape crawl download webpages websites pdf lxml content filter document manipulation',
+    keywords='web crawler scraper scrape crawl download filter save webpages websites images docs document documentation pdf csv html lxml',
     author='Hunter Hammond',
     author_email='huntrar@gmail.com',
     maintainer='Hunter Hammond',
