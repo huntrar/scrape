@@ -21,7 +21,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 
 ## Usage
     usage: scrape.py [-h] [-a [ATTRIBUTES [ATTRIBUTES ...]]] [-all]
-                     [-c [CRAWL [CRAWL ...]]] [--csv] [-cs [CACHE_SIZE]]
+                     [-c [CRAWL [CRAWL ...]]] [-C] [--csv] [-cs [CACHE_SIZE]]
                      [-f [FILTER [FILTER ...]]] [--html] [-i] [-m] [-mp MAXPAGES]
                      [-ml MAXLINKS] [-n] [-ni] [-no] [-o [OUT [OUT ...]]] [-ow]
                      [-p] [-pt] [-q] [-s] [-t] [-v] [-x [XPATH]]
@@ -39,6 +39,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
       -all, --crawl-all     crawl all pages
       -c [CRAWL [CRAWL ...]], --crawl [CRAWL [CRAWL ...]]
                             regexp rules for following new pages
+      -C, --clear-cache     clear the cache
       --csv                 write files as CSV
       -cs [CACHE_SIZE], --cache-size [CACHE_SIZE]
                             size of link cache (default: 1000)
@@ -74,6 +75,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 * Input to scrape can be links, files, or a combination of the two, allowing you to create new files constructed from both existing and newly scraped content.
 * Multiple input files/URL's are saved to multiple output files/directories by default. To consolidate them, use the --single flag.
 * Images are automatically included when saving as PDF or HTML; this involves making additional HTTP requests, adding a significant amount of processing time. If you wish to forgo this feature use the --no-images flag, or set the environment variable SCRAPE_DISABLE_IMGS.
+* Requests cache is enabled by default to cache webpages, it can be disabled by setting the environment variable SCRAPE_DISABLE_CACHE.
 * Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
 * To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
 * If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.

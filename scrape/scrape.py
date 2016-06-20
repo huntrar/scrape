@@ -33,6 +33,8 @@ def get_parser():
                         action='store_true')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
                         help='regexp rules for following new pages')
+    parser.add_argument('-C', '--clear-cache', help='clear the cache',
+                        action='store_true')
     parser.add_argument('--csv', help='write files as CSV',
                         action='store_true')
     parser.add_argument('-cs', '--cache-size', type=int, nargs='?',
@@ -298,9 +300,17 @@ def command_line_runner():
     if args['version']:
         print(__version__)
         return
+    if args['clear_cache']:
+        utils.clear_cache()
+        print('Cleared {0}.'.format(utils.CACHE_DIR))
+        return
     if not args['query']:
         parser.print_help()
         return
+
+    # Enable cache unless user sets environ variable SCRAPE_DISABLE_CACHE
+    if not os.getenv('SCRAPE_DISABLE_CACHE'):
+        utils.enable_cache()
 
     # Prompt user for filetype if none specified
     valid_types = ('print', 'text', 'csv', 'pdf', 'html')

@@ -1,6 +1,8 @@
 """Contains scrape utility functions"""
 
+from __future__ import print_function
 from cgi import escape
+import glob
 import hashlib
 import os
 import random
@@ -29,6 +31,7 @@ else:
     from urllib.request import getproxies
     from urllib.parse import urlparse, urljoin
 
+
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
                'Gecko/20100101 Firefox/11.0',
                'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) '
@@ -41,6 +44,16 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
                'Mozilla/5.0 (Windows; Windows NT 6.1) '
                'AppleWebKit/536.5 (KHTML, like Gecko) '
                'Chrome/19.0.1084.46 Safari/536.5')
+
+
+XDG_CACHE_DIR = os.environ.get('XDG_CACHE_HOME',
+                               os.path.join(os.path.expanduser('~'), '.cache'))
+CACHE_DIR = os.path.join(XDG_CACHE_DIR, 'scrape')
+CACHE_FILE = os.path.join(CACHE_DIR, 'cache{0}'.format(
+    SYS_VERSION if SYS_VERSION == 3 else ''))
+
+# Web requests and requests caching functions
+#
 
 
 def get_proxies():
@@ -78,6 +91,27 @@ def get_raw_resp(url):
         raise
 
 
+def enable_cache():
+    """Enable requests library cache"""
+    try:
+        import requests_cache
+    except ImportError as err:
+        sys.stderr.write('Failed to enable cache: {0}\n'.format(str(err)))
+        return
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+    requests_cache.install_cache(CACHE_FILE)
+
+
+def clear_cache():
+    """Clear requests library cache"""
+    for cache in glob.glob('{0}*'.format(CACHE_FILE)):
+        os.remove(cache)
+
+# Document caching functions
+#
+
+
 def hash_text(text):
     """Return MD5 hash"""
     md5 = hashlib.md5()
@@ -90,6 +124,9 @@ def cache_link(link_cache, link_hash, cache_size):
     link_cache.append(link_hash)
     if len(link_cache) > cache_size:
         link_cache.pop(0)
+
+# Text processing functions
+#
 
 
 def re_filter(text, regexps):
@@ -109,28 +146,6 @@ def re_filter(text, regexps):
             # Last line is an unnecessary newline
             return matched_text[:-1]
     return text
-
-
-def clean_attr(attr):
-    """Append @ to attributes and resolve text -> text() for XPath"""
-    if attr:
-        if 'text' in attr:
-            return 'text()'
-        else:
-            attr = attr.lstrip('@')
-    if attr:
-        return '@' + attr
-    return None
-
-
-def parse_html(infile, xpath):
-    """Filter HTML using XPath"""
-    if not isinstance(infile, lh.HtmlElement):
-        infile = lh.fromstring(infile)
-    infile = infile.xpath(xpath)
-    if not infile:
-        raise ValueError('XPath {0} returned no results.'.format(xpath))
-    return infile
 
 
 def remove_whitespace(text):
@@ -236,57 +251,70 @@ def parse_text(infile, xpath=None, filter_words=None, attributes=None):
             for line in remove_whitespace(text) if line]
 
 
+def get_parsed_text(args, infilename):
+    """Parse and return text content of infiles
+
+       Keyword arguments:
+       args -- program arguments (dict)
+       infilenames -- name of user-inputted and/or downloaded file (str)
+
+       Return a list of strings of text.
+    """
+    parsed_text = []
+    if infilename.endswith('.html'):
+        # Convert HTML to lxml object for content parsing
+        html = lh.fromstring(read_files(infilename))
+        text = None
+    else:
+        html = None
+        text = read_files(infilename)
+
+    if html is not None:
+        parsed_text = parse_text(html, args['xpath'], args['filter'],
+                                 args['attributes'])
+    elif text is not None:
+        parsed_text = parse_text(text, args['xpath'], args['filter'])
+    else:
+        if not args['quiet']:
+            sys.stderr.write('Failed to parse text from {0}.\n'
+                             .format(infilename))
+    return parsed_text
+
+# HTML parsing functions
+#
+
+
+def clean_attr(attr):
+    """Append @ to attributes and resolve text -> text() for XPath"""
+    if attr:
+        if 'text' in attr:
+            return 'text()'
+        else:
+            attr = attr.lstrip('@')
+    if attr:
+        return '@' + attr
+    return None
+
+
+def parse_html(infile, xpath):
+    """Filter HTML using XPath"""
+    if not isinstance(infile, lh.HtmlElement):
+        infile = lh.fromstring(infile)
+    infile = infile.xpath(xpath)
+    if not infile:
+        raise ValueError('XPath {0} returned no results.'.format(xpath))
+    return infile
+
+
+# URL processing functions
+#
+
 def get_domain(url):
     """Get the domain of a URL"""
     domain = '{url.netloc}'.format(url=urlparse(url))
     if '.' in domain:
         return domain.split('.')[-2]
     return domain
-
-
-def get_outfilename(url, domain=None):
-    """Construct the output filename from partial domain and end of path"""
-    if domain is None:
-        domain = get_domain(url)
-
-    path = '{url.path}'.format(url=urlparse(url))
-    if '.' in path:
-        tail_url = path.split('.')[-2]
-    else:
-        tail_url = path
-
-    if tail_url:
-        if '/' in tail_url:
-            tail_pieces = [x for x in tail_url.split('/') if x]
-            tail_url = tail_pieces[-1]
-
-        # Keep length of return string below or equal to max_len
-        max_len = 24
-        if domain:
-            max_len -= (len(domain) + 1)
-        if len(tail_url) > max_len:
-            if '-' in tail_url:
-                tail_pieces = [x for x in tail_url.split('-') if x]
-                tail_url = tail_pieces.pop(0)
-                if len(tail_url) > max_len:
-                    tail_url = tail_url[:max_len]
-                else:
-                    # Add as many tail pieces that can fit
-                    tail_len = 0
-                    for piece in tail_pieces:
-                        tail_len += len(piece)
-                        if tail_len <= max_len:
-                            tail_url += '-' + piece
-                        else:
-                            break
-            else:
-                tail_url = tail_url[:max_len]
-
-        if not domain:
-            return tail_url
-        return '{0}-{1}'.format(domain, tail_url).lower()
-    else:
-        return domain.lower()
 
 
 def add_scheme(url):
@@ -343,22 +371,52 @@ def add_url_ext(url):
     return url
 
 
-def confirm_input(user_input):
-    """Check user input for yes, no, or an exit signal"""
-    if isinstance(user_input, list):
-        user_input = ''.join(user_input)
+# File processing functions
+#
 
-    try:
-        u_inp = user_input.lower().strip()
-    except AttributeError:
-        u_inp = user_input
+def get_outfilename(url, domain=None):
+    """Construct the output filename from partial domain and end of path"""
+    if domain is None:
+        domain = get_domain(url)
 
-    # Check for exit signal
-    if u_inp in ('q', 'quit', 'exit'):
-        sys.exit()
-    if u_inp in ('y', 'yes'):
-        return True
-    return False
+    path = '{url.path}'.format(url=urlparse(url))
+    if '.' in path:
+        tail_url = path.split('.')[-2]
+    else:
+        tail_url = path
+
+    if tail_url:
+        if '/' in tail_url:
+            tail_pieces = [x for x in tail_url.split('/') if x]
+            tail_url = tail_pieces[-1]
+
+        # Keep length of return string below or equal to max_len
+        max_len = 24
+        if domain:
+            max_len -= (len(domain) + 1)
+        if len(tail_url) > max_len:
+            if '-' in tail_url:
+                tail_pieces = [x for x in tail_url.split('-') if x]
+                tail_url = tail_pieces.pop(0)
+                if len(tail_url) > max_len:
+                    tail_url = tail_url[:max_len]
+                else:
+                    # Add as many tail pieces that can fit
+                    tail_len = 0
+                    for piece in tail_pieces:
+                        tail_len += len(piece)
+                        if tail_len <= max_len:
+                            tail_url += '-' + piece
+                        else:
+                            break
+            else:
+                tail_url = tail_url[:max_len]
+
+        if not domain:
+            return tail_url
+        return '{0}-{1}'.format(domain, tail_url).lower()
+    else:
+        return domain.lower()
 
 
 def remove_file(filename):
@@ -479,52 +537,6 @@ def write_pdf_files(args, infilenames, outfilename):
         return False
 
 
-def write_file(data, outfilename):
-    """Write a single file to disk"""
-    if not data:
-        return False
-    try:
-        with open(outfilename, 'w') as outfile:
-            for line in data:
-                if line:
-                    outfile.write(line)
-        return True
-    except (OSError, IOError) as err:
-        sys.stderr.write('An error occurred while writing {0}:\n{1}'
-                         .format(outfilename, str(err)))
-        return False
-
-
-def get_parsed_text(args, infilename):
-    """Parse and return text content of infiles
-
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- name of user-inputted and/or downloaded file (str)
-
-       Return a list of strings of text.
-    """
-    parsed_text = []
-    if infilename.endswith('.html'):
-        # Convert HTML to lxml object for content parsing
-        html = lh.fromstring(read_files(infilename))
-        text = None
-    else:
-        html = None
-        text = read_files(infilename)
-
-    if html is not None:
-        parsed_text = parse_text(html, args['xpath'], args['filter'],
-                                 args['attributes'])
-    elif text is not None:
-        parsed_text = parse_text(text, args['xpath'], args['filter'])
-    else:
-        if not args['quiet']:
-            sys.stderr.write('Failed to parse text from {0}.\n'
-                             .format(infilename))
-    return parsed_text
-
-
 def write_csv_files(args, infilenames, outfilename):
     """Write CSV file(s) to disk
 
@@ -536,7 +548,6 @@ def write_csv_files(args, infilenames, outfilename):
     def csv_convert(line):
         """Strip punctuation and insert commas"""
         clean_line = []
-        strip_word = ''
         for word in line.split(' '):
             clean_line.append(word.strip(string.punctuation))
         return ', '.join(clean_line)
@@ -605,13 +616,20 @@ def write_text_files(args, infilenames, outfilename):
         write_file(all_text, outfilename)
 
 
-def mkdir_and_cd(dirname):
-    """Change directory and/or create it if necessary"""
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-        os.chdir(dirname)
-    else:
-        os.chdir(dirname)
+def write_file(data, outfilename):
+    """Write a single file to disk"""
+    if not data:
+        return False
+    try:
+        with open(outfilename, 'w') as outfile:
+            for line in data:
+                if line:
+                    outfile.write(line)
+        return True
+    except (OSError, IOError) as err:
+        sys.stderr.write('An error occurred while writing {0}:\n{1}'
+                         .format(outfilename, str(err)))
+        return False
 
 
 def get_num_part_files():
@@ -743,3 +761,36 @@ def remove_part_files(num_parts=None):
     for filename in filenames:
         remove_part_images(filename)
         remove_file(filename)
+
+# User input and sanitation functions
+#
+
+
+def confirm_input(user_input):
+    """Check user input for yes, no, or an exit signal"""
+    if isinstance(user_input, list):
+        user_input = ''.join(user_input)
+
+    try:
+        u_inp = user_input.lower().strip()
+    except AttributeError:
+        u_inp = user_input
+
+    # Check for exit signal
+    if u_inp in ('q', 'quit', 'exit'):
+        sys.exit()
+    if u_inp in ('y', 'yes'):
+        return True
+    return False
+
+# Miscellaneous functions
+#
+
+
+def mkdir_and_cd(dirname):
+    """Change directory and/or create it if necessary"""
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+        os.chdir(dirname)
+    else:
+        os.chdir(dirname)
