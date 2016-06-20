@@ -14,14 +14,6 @@ from .crawl import crawl
 from . import __version__
 
 
-SYS_VERSION = sys.version_info[0]
-if SYS_VERSION == 2:
-    try:
-        input = raw_input
-    except NameError:
-        pass
-
-
 def get_parser():
     """Parse command-line arguments"""
     parser = ArgumentParser(description='a command-line web scraping tool')

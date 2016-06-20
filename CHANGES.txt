@@ -1,6 +1,8 @@
 0.9.2
 ------
 
+ - Added compat.py file
+ - Moved compatible builtin definitions to __init__
  - Added requests cache
 
 0.9.1

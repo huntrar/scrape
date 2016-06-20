@@ -19,14 +19,13 @@ except ImportError:
     pass
 import requests
 
+from .compat import uni, asc
+from . import SYS_VERSION
 
-SYS_VERSION = sys.version_info[0]
+
 if SYS_VERSION == 2:
     from urllib import getproxies
     from urlparse import urlparse, urljoin
-
-    range = xrange
-    input = raw_input
 else:
     from urllib.request import getproxies
     from urllib.parse import urlparse, urljoin
@@ -74,7 +73,7 @@ def get_resp(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
-        return lh.fromstring(request.text.encode('utf-8'))
+        return lh.fromstring(uni(request.text))
     except Exception:
         sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
         raise
@@ -85,7 +84,7 @@ def get_raw_resp(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
-        return request.text.encode('utf-8')
+        return uni(request.text)
     except Exception:
         sys.stderr.write('Failed to retrieve {0} as str.\n'.format(url))
         raise
@@ -700,7 +699,7 @@ def write_part_file(args, url, raw_html, html=None, part_num=None):
 
     # Decode bytes to str if necessary for Python 3
     if type(raw_html) == bytes:
-        raw_html = raw_html.decode('ascii', 'ignore')
+        raw_html = asc(raw_html)
     # Convert html to an lh.HtmlElement object for parsing/saving images
     if html is None:
         html = lh.fromstring(raw_html)
