@@ -25,12 +25,12 @@ def get_parser():
                         action='store_true')
     parser.add_argument('-c', '--crawl', type=str, nargs='*',
                         help='regexp rules for following new pages')
-    parser.add_argument('-C', '--clear-cache', help='clear the cache',
+    parser.add_argument('-C', '--clear-cache', help='clear requests cache',
                         action='store_true')
-    parser.add_argument('--csv', help='write files as CSV',
+    parser.add_argument('--csv', help='write files as csv',
                         action='store_true')
     parser.add_argument('-cs', '--cache-size', type=int, nargs='?',
-                        help='size of link cache (default: 1000)',
+                        help='size of page cache (default: 1000)',
                         default=1000)
     parser.add_argument('-f', '--filter', type=str, nargs='*',
                         help='regexp rules for filtering text')
@@ -102,7 +102,7 @@ def write_files(args, infilenames, outfilename):
                 outfilename = outfilename + '.pdf'
             utils.write_pdf_files(args, infilenames, outfilename)
         elif args['csv']:
-            # CSV/text is parsed by XPath/regexes/tag attributes prior to writing
+            # csv/text is parsed by XPath/regexes/tag attributes prior to writing
             if not outfilename.endswith('.csv'):
                 outfilename = outfilename + '.csv'
             utils.write_csv_files(args, infilenames, outfilename)
@@ -324,7 +324,7 @@ def command_line_runner():
         args['no_images'] = True
 
     # Ask user if they want to save images when crawling due to its overhead
-    # This is only applicable when saving to PDF or HTML formats
+    # This is only applicable when saving to pdf or HTML formats
     if (args['pdf'] or args['html']) and (args['crawl'] or args['crawl_all']):
         if not args['images'] and not args['no_images']:
             save_msg = ('Choosing to save images will greatly slow the'

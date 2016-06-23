@@ -1,4 +1,15 @@
-"""Contains scrape utility functions"""
+"""scrape utility functions.
+
+   Functions include:
+   Web requests and requests caching
+   Document caching
+   Text processing
+   HTML parsing
+   URL processing
+   File processing
+   User input and sanitation
+   Miscellaneous
+"""
 
 from __future__ import print_function
 from cgi import escape
@@ -461,12 +472,12 @@ def overwrite_file_check(args, filename):
 
 
 def write_pdf_files(args, infilenames, outfilename):
-    """Write PDF file(s) to disk using pdfkit.
+    """Write pdf file(s) to disk using pdfkit.
 
     Keyword arguments:
     args -- program arguments (dict)
     infilenames -- names of user-inputted and/or downloaded files (list)
-    outfilename -- name of output PDF file (str)
+    outfilename -- name of output pdf file (str)
     """
     # Modifies filename if user does not wish to overwrite
     outfilename = overwrite_file_check(args, outfilename)
@@ -530,7 +541,7 @@ def write_pdf_files(args, infilenames, outfilename):
 
 
 def write_csv_files(args, infilenames, outfilename):
-    """Write CSV file(s) to disk.
+    """Write csv file(s) to disk.
 
     Keyword arguments:
     args -- program arguments (dict)
