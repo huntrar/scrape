@@ -10,12 +10,12 @@ import os
 import sys
 
 from scrape import utils
-from .crawl import crawl
-from . import __version__
+from scrape.crawler import Crawler
+from scrape import __version__
 
 
 def get_parser():
-    """Parse command-line arguments"""
+    """Parse command-line arguments."""
     parser = ArgumentParser(description='a command-line web scraping tool')
     parser.add_argument('query', metavar='QUERY', type=str, nargs='*',
                         help='URL\'s/files to scrape')
@@ -40,10 +40,8 @@ def get_parser():
                         help='save page images')
     parser.add_argument('-m', '--multiple', help='save to multiple files',
                         action='store_true')
-    parser.add_argument('-mp', '--maxpages', type=int,
+    parser.add_argument('-max', '--max-crawls', type=int,
                         help='max number of pages to crawl')
-    parser.add_argument('-ml', '--maxlinks', type=int,
-                        help='max number of links to scrape')
     parser.add_argument('-n', '--nonstrict', action='store_true',
                         help='allow crawler to visit any domain')
     parser.add_argument('-ni', '--no-images', action='store_true',
@@ -72,11 +70,11 @@ def get_parser():
 
 
 def print_text(args, infilenames):
-    """Print text content of infiles to stdout
+    """Print text content of infiles to stdout.
 
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
+    Keyword arguments:
+    args -- program arguments (dict)
+    infilenames -- names of user-inputted and/or downloaded files (list)
     """
     for infilename in infilenames:
         parsed_text = utils.get_parsed_text(args, infilename)
@@ -87,14 +85,14 @@ def print_text(args, infilenames):
 
 
 def write_files(args, infilenames, outfilename):
-    """Write scraped or local file(s) in desired format
+    """Write scraped or local file(s) in desired format.
 
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output file (str)
+    Keyword arguments:
+    args -- program arguments (dict)
+    infilenames -- names of user-inputted and/or downloaded files (list)
+    outfilename -- name of output file (str)
 
-       Remove PART(#).html files after conversion unless otherwise specified.
+    Remove PART(#).html files after conversion unless otherwise specified.
     """
     try:
         if args['print']:
@@ -122,7 +120,7 @@ def write_files(args, infilenames, outfilename):
 
 
 def get_single_outfilename(args):
-    """Use first possible entry in query as filename"""
+    """Use first possible entry in query as filename."""
     for arg in args['query']:
         if arg in args['files']:
             return ('.'.join(arg.split('.')[:-1])).lower()
@@ -135,7 +133,9 @@ def get_single_outfilename(args):
 
 
 def write_single_file(args, base_dir):
-    """Write to a single output file and/or subdirectory"""
+    """Write to a single output file and/or subdirectory."""
+    crawler = Crawler(args)
+
     if args['urls']:
         domain = utils.get_domain(args['urls'][0])
         if args['html']:
@@ -149,7 +149,7 @@ def write_single_file(args, base_dir):
         if query.strip('/') in args['urls']:
             if args['crawl'] or args['crawl_all']:
                 # Crawl and/or write HTML files and possibly images to disk
-                infilenames += crawl(args, query, domain)
+                infilenames += crawler.crawl_links(query)
             else:
                 raw_resp = utils.get_raw_resp(query)
                 if raw_resp is not None:
@@ -181,7 +181,9 @@ def write_single_file(args, base_dir):
 
 
 def write_multiple_files(args, base_dir):
-    """Write to multiple output files and/or subdirectories"""
+    """Write to multiple output files and/or subdirectories."""
+    crawler = Crawler(args)
+
     for i, query in enumerate(args['query']):
         if query in args['files']:
             # Write files
@@ -202,7 +204,7 @@ def write_multiple_files(args, base_dir):
             # Crawl and/or write HTML files and possibly images to disk
             if args['crawl'] or args['crawl_all']:
                 # Traverses and saves pages as PART.html files
-                infilenames = crawl(args, query, domain)
+                infilenames = crawler.crawl_links(query)
             else:
                 raw_resp = utils.get_raw_resp(query)
                 if raw_resp is not None:
@@ -233,7 +235,7 @@ def write_multiple_files(args, base_dir):
 
 
 def scrape(args):
-    """Extract, filter, and convert webpages to text, pdf, or HTML files"""
+    """Extract, filter, and convert webpages to text, pdf, or HTML files."""
     try:
         base_dir = os.getcwd()
 
@@ -259,9 +261,9 @@ def scrape(args):
 
         if args['urls']:
             # Add URL extensions and schemes and update query and URL's
-            urls_with_exts = [utils.add_url_ext(x) for x in args['urls']]
-            args['query'] = [utils.add_scheme(x) if x in args['urls']
-                             and not utils.check_scheme(x) else x
+            urls_with_exts = [utils.add_url_suffix(x) for x in args['urls']]
+            args['query'] = [utils.add_protocol(x) if x in args['urls']
+                             and not utils.check_protocol(x) else x
                              for x in urls_with_exts]
             args['urls'] = [x for x in args['query'] if x not in args['files']]
 
@@ -286,7 +288,7 @@ def scrape(args):
 
 
 def command_line_runner():
-    """Handle command-line interaction"""
+    """Handle command-line interaction."""
     parser = get_parser()
     args = vars(parser.parse_args())
     if args['version']:

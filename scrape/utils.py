@@ -18,6 +18,7 @@ try:
 except ImportError:
     pass
 import requests
+import tldextract
 
 from .compat import uni, asc
 from . import SYS_VERSION
@@ -56,7 +57,7 @@ CACHE_FILE = os.path.join(CACHE_DIR, 'cache{0}'.format(
 
 
 def get_proxies():
-    """Get available proxies to use with requests library"""
+    """Get available proxies to use with requests library."""
     proxies = getproxies()
     filtered_proxies = {}
     for key, value in proxies.items():
@@ -69,7 +70,7 @@ def get_proxies():
 
 
 def get_resp(url):
-    """Get webpage response as an lxml.html.HtmlElement object"""
+    """Get webpage response as an lxml.html.HtmlElement object."""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
@@ -80,7 +81,7 @@ def get_resp(url):
 
 
 def get_raw_resp(url):
-    """Get webpage response as a str object"""
+    """Get webpage response as a unicode string."""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
@@ -91,7 +92,7 @@ def get_raw_resp(url):
 
 
 def enable_cache():
-    """Enable requests library cache"""
+    """Enable requests library cache."""
     try:
         import requests_cache
     except ImportError as err:
@@ -103,7 +104,7 @@ def enable_cache():
 
 
 def clear_cache():
-    """Clear requests library cache"""
+    """Clear requests library cache."""
     for cache in glob.glob('{0}*'.format(CACHE_FILE)):
         os.remove(cache)
 
@@ -112,51 +113,49 @@ def clear_cache():
 
 
 def hash_text(text):
-    """Return MD5 hash"""
+    """Return MD5 hash of a string."""
     md5 = hashlib.md5()
     md5.update(text)
     return md5.hexdigest()
 
 
-def cache_link(link_cache, link_hash, cache_size):
-    """Add a link to cache"""
-    link_cache.append(link_hash)
-    if len(link_cache) > cache_size:
-        link_cache.pop(0)
+def cache_page(page_cache, page_hash, cache_size):
+    """Add a page to the page cache."""
+    page_cache.append(page_hash)
+    if len(page_cache) > cache_size:
+        page_cache.pop(0)
 
 # Text processing functions
 #
 
 
 def re_filter(text, regexps):
-    """Filter text using regular expressions"""
-    if regexps:
-        regexps = [re.compile(x) for x in regexps]
-        matched_text = []
-        for line in text:
-            for regexp in regexps:
-                if line not in matched_text:
-                    found = regexp.search(line)
-                    if found:
-                        group = found.group()
-                        if group:
-                            matched_text.append(line)
-        if matched_text:
-            # Last line is an unnecessary newline
-            return matched_text[:-1]
-    return text
+    """Filter text using regular expressions."""
+    if not regexps:
+        return text
+
+    matched_text = []
+    compiled_regexps = [re.compile(x) for x in regexps]
+    for line in text:
+        if line in matched_text:
+            continue
+
+        for regexp in compiled_regexps:
+            found = regexp.search(line)
+            if found and found.group():
+                matched_text.append(line)
+
+    return matched_text or text
 
 
 def remove_whitespace(text):
-    """Remove unnecessary whitespace while keeping logical structure
+    """Remove unnecessary whitespace while keeping logical structure.
 
-       Keyword arguments:
-       text -- text to remove whitespace from (list)
+    Keyword arguments:
+    text -- text to remove whitespace from (list)
 
-       The goal is to remove unnecessary whitespace while retaining logical
-       structure such as paragraph separation.
-       We also want to remove unnecessary whitespace between words on a line.
-       Removes whitespace at the start and end of the text.
+    Retain paragraph structure but remove other whitespace,
+    such as between words on a line and at the start and end of the text.
     """
     clean_text = []
     curr_line = ''
@@ -191,7 +190,6 @@ def remove_whitespace(text):
 
     # Now filter each individual line for extraneous whitespace
     cleaner_text = []
-    clean_line = ''
     for line in clean_text:
         clean_line = ' '.join(line.split())
         if not clean_line.strip():
@@ -201,15 +199,15 @@ def remove_whitespace(text):
 
 
 def parse_text(infile, xpath=None, filter_words=None, attributes=None):
-    """Filter text using XPath, regex keywords, and tag attributes
+    """Filter text using XPath, regex keywords, and tag attributes.
 
-       Keyword arguments:
-       infile -- HTML or text content to parse (list)
-       xpath -- an XPath expression (str)
-       filter_words -- regex keywords (list)
-       attributes -- HTML tag attributes (list)
+    Keyword arguments:
+    infile -- HTML or text content to parse (list)
+    xpath -- an XPath expression (str)
+    filter_words -- regex keywords (list)
+    attributes -- HTML tag attributes (list)
 
-       Return a list of strings of text.
+    Return a list of strings of text.
     """
     infiles = []
     text = []
@@ -240,7 +238,7 @@ def parse_text(infile, xpath=None, filter_words=None, attributes=None):
                 if isinstance(infile, lh.HtmlElement):
                     new_text = infile.xpath('{0}/{1}'.format(text_xpath, attr))
                 else:
-                    # re.split preserves delimeters place in the list
+                    # re.split preserves delimiters place in the list
                     new_text = [x for x in re.split('(\n)', infile) if x]
                 text += new_text
 
@@ -251,13 +249,13 @@ def parse_text(infile, xpath=None, filter_words=None, attributes=None):
 
 
 def get_parsed_text(args, infilename):
-    """Parse and return text content of infiles
+    """Parse and return text content of infiles.
 
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- name of user-inputted and/or downloaded file (str)
+    Keyword arguments:
+    args -- program arguments (dict)
+    infilenames -- name of user-inputted and/or downloaded file (str)
 
-       Return a list of strings of text.
+    Return a list of strings of text.
     """
     parsed_text = []
     if infilename.endswith('.html'):
@@ -284,7 +282,7 @@ def get_parsed_text(args, infilename):
 
 
 def clean_attr(attr):
-    """Append @ to attributes and resolve text -> text() for XPath"""
+    """Append @ to attributes and resolve text -> text() for XPath."""
     if attr:
         if 'text' in attr:
             return 'text()'
@@ -296,7 +294,7 @@ def clean_attr(attr):
 
 
 def parse_html(infile, xpath):
-    """Filter HTML using XPath"""
+    """Filter HTML using XPath."""
     if not isinstance(infile, lh.HtmlElement):
         infile = lh.fromstring(infile)
     infile = infile.xpath(xpath)
@@ -309,64 +307,57 @@ def parse_html(infile, xpath):
 #
 
 def get_domain(url):
-    """Get the domain of a URL"""
-    domain = '{url.netloc}'.format(url=urlparse(url))
-    if '.' in domain:
-        return domain.split('.')[-2]
-    return domain
+    """Get the domain of a URL using tldextract."""
+    return tldextract.extract(url).domain
 
 
-def add_scheme(url):
-    """Add scheme to URL"""
+def add_protocol(url):
+    """Add protocol to URL."""
     return 'http://{0}'.format(url)
 
 
-def check_scheme(url):
-    """Check URL for a scheme"""
+def check_protocol(url):
+    """Check URL for a protocol."""
     if url and (url.startswith('http://') or url.startswith('https://')):
         return True
     return False
 
 
-def remove_scheme(url):
-    """Remove scheme from URL"""
-    if check_scheme(url):
+def remove_protocol(url):
+    """Remove protocol from URL."""
+    if check_protocol(url):
         return url.replace('http://', '').replace('https://', '')
     return url
 
 
-def clean_url(url, base_url=None):
-    """Remove URL fragments, www., and add base URL if necessary"""
+def clean_url(url, base_netloc=None):
+    """Add base netloc if missing and remove www, fragments."""
     parsed_url = urlparse(url)
+
     fragment = '{url.fragment}'.format(url=parsed_url)
     if fragment:
         url = url.split(fragment)[0]
-    if base_url is not None and not '{url.netloc}'.format(url=parsed_url):
-        url = urljoin(base_url, url)
 
     netloc = '{url.netloc}'.format(url=parsed_url)
+    if base_netloc is not None and not netloc:
+        url = urljoin(base_netloc, url)
+        netloc = '{url.netloc}'.format(url=urlparse(url))
+
     if 'www.' in netloc:
         url = url.replace(netloc, netloc.replace('www.', ''))
     return url.rstrip(string.punctuation)
 
 
-def has_ext(url):
-    """Return whether the url has an extension (unreliable in some cases)"""
-    if 'www.' in url:
-        url = url.replace('www.', '')
-    parsed_url = urlparse(url)
-    if parsed_url.path and not parsed_url.netloc:
-        return bool(os.path.splitext(parsed_url.path)[1])
-    elif parsed_url.netloc:
-        return bool(os.path.splitext(parsed_url.netloc)[1])
-    return False
+def has_suffix(url):
+    """Return whether the url has a suffix using tldextract."""
+    return bool(tldextract.extract(url).suffix)
 
 
-def add_url_ext(url):
-    """Add .com extension to url if none found"""
+def add_url_suffix(url):
+    """Add .com suffix to URL if none found."""
     url = url.rstrip('/')
-    if not has_ext(url):
-        url = '{0}.com'.format(url)
+    if not has_suffix(url):
+        return '{0}.com'.format(url)
     return url
 
 
@@ -374,7 +365,7 @@ def add_url_ext(url):
 #
 
 def get_outfilename(url, domain=None):
-    """Construct the output filename from partial domain and end of path"""
+    """Construct the output filename from domain and end of path."""
     if domain is None:
         domain = get_domain(url)
 
@@ -411,15 +402,14 @@ def get_outfilename(url, domain=None):
             else:
                 tail_url = tail_url[:max_len]
 
-        if not domain:
-            return tail_url
-        return '{0}-{1}'.format(domain, tail_url).lower()
-    else:
-        return domain.lower()
+        if domain:
+            return '{0}-{1}'.format(domain, tail_url).lower()
+        return tail_url
+    return domain.lower()
 
 
 def remove_file(filename):
-    """Remove a file from disk"""
+    """Remove a file from disk."""
     try:
         os.remove(filename)
         return True
@@ -428,7 +418,7 @@ def remove_file(filename):
 
 
 def modify_filename_id(filename):
-    """Modify filename to have a unique numerical identifier"""
+    """Modify filename to have a unique numerical identifier."""
     # Split the filename and its extension
     split_filename = os.path.splitext(filename)
     id_num_re = re.compile('(\(\d\))')
@@ -448,7 +438,7 @@ def modify_filename_id(filename):
 
 
 def overwrite_file_check(args, filename):
-    """If filename exists, overwrite or modify it to be unique"""
+    """If filename exists, overwrite or modify it to be unique."""
     if not args['overwrite'] and os.path.exists(filename):
         # Confirm overwriting of the file, or modify filename
         if args['no_overwrite']:
@@ -468,12 +458,12 @@ def overwrite_file_check(args, filename):
 
 
 def write_pdf_files(args, infilenames, outfilename):
-    """Write PDF file(s) to disk using pdfkit
+    """Write PDF file(s) to disk using pdfkit.
 
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output PDF file (str)
+    Keyword arguments:
+    args -- program arguments (dict)
+    infilenames -- names of user-inputted and/or downloaded files (list)
+    outfilename -- name of output PDF file (str)
     """
     # Modifies filename if user does not wish to overwrite
     outfilename = overwrite_file_check(args, outfilename)
@@ -537,12 +527,12 @@ def write_pdf_files(args, infilenames, outfilename):
 
 
 def write_csv_files(args, infilenames, outfilename):
-    """Write CSV file(s) to disk
+    """Write CSV file(s) to disk.
 
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output text file (str)
+    Keyword arguments:
+    args -- program arguments (dict)
+    infilenames -- names of user-inputted and/or downloaded files (list)
+    outfilename -- name of output text file (str)
     """
     def csv_convert(line):
         """Strip punctuation and insert commas"""
@@ -583,12 +573,12 @@ def write_csv_files(args, infilenames, outfilename):
 
 
 def write_text_files(args, infilenames, outfilename):
-    """Write text file(s) to disk
+    """Write text file(s) to disk.
 
-       Keyword arguments:
-       args -- program arguments (dict)
-       infilenames -- names of user-inputted and/or downloaded files (list)
-       outfilename -- name of output text file (str)
+    Keyword arguments:
+    args -- program arguments (dict)
+    infilenames -- names of user-inputted and/or downloaded files (list)
+    outfilename -- name of output text file (str)
     """
     # Modifies filename if user does not wish to overwrite
     outfilename = overwrite_file_check(args, outfilename)
@@ -616,7 +606,7 @@ def write_text_files(args, infilenames, outfilename):
 
 
 def write_file(data, outfilename):
-    """Write a single file to disk"""
+    """Write a single file to disk."""
     if not data:
         return False
     try:
@@ -632,7 +622,7 @@ def write_file(data, outfilename):
 
 
 def get_num_part_files():
-    """Get the number of PART.html files currently saved to disk"""
+    """Get the number of PART.html files currently saved to disk."""
     num_parts = 0
     for filename in os.listdir(os.getcwd()):
         if filename.startswith('PART') and filename.endswith('.html'):
@@ -641,15 +631,15 @@ def get_num_part_files():
 
 
 def write_part_images(url, raw_html, html, filename):
-    """Write image file(s) associated with HTML to disk, substituting filenames
+    """Write image file(s) associated with HTML to disk, substituting filenames.
 
-       Keywords arguments:
-       url -- the URL from which the HTML has been extracted from (str)
-       raw_html -- unparsed HTML file content (list)
-       html -- parsed HTML file content (lxml.html.HtmlElement) (default: None)
-       filename -- the PART.html filename (str)
+    Keywords arguments:
+    url -- the URL from which the HTML has been extracted from (str)
+    raw_html -- unparsed HTML file content (list)
+    html -- parsed HTML file content (lxml.html.HtmlElement) (default: None)
+    filename -- the PART.html filename (str)
 
-       Return raw HTML with image names replaced with local image filenames.
+    Return raw HTML with image names replaced with local image filenames.
     """
     save_dirname = '{0}_files'.format(os.path.splitext(filename)[0])
     if not os.path.exists(save_dirname):
@@ -685,13 +675,13 @@ def write_part_images(url, raw_html, html, filename):
 
 
 def write_part_file(args, url, raw_html, html=None, part_num=None):
-    """Write PART.html file(s) to disk, images in PART_files directory
+    """Write PART.html file(s) to disk, images in PART_files directory.
 
-       Keyword arguments:
-       args -- program arguments (dict)
-       raw_html -- unparsed HTML file content (list)
-       html -- parsed HTML file content (lxml.html.HtmlElement) (default: None)
-       part_num -- PART(#).html file number (int) (default: None)
+    Keyword arguments:
+    args -- program arguments (dict)
+    raw_html -- unparsed HTML file content (list)
+    html -- parsed HTML file content (lxml.html.HtmlElement) (default: None)
+    part_num -- PART(#).html file number (int) (default: None)
     """
     if part_num is None:
         part_num = get_num_part_files() + 1
@@ -730,7 +720,7 @@ def write_part_file(args, url, raw_html, html=None, part_num=None):
 
 
 def get_part_filenames(num_parts=None, start_num=0):
-    """Get numbered PART.html filenames"""
+    """Get numbered PART.html filenames."""
     if num_parts is None:
         num_parts = get_num_part_files()
     return ['PART{0}.html'.format(i) for i in range(start_num+1, num_parts+1)]
@@ -748,14 +738,14 @@ def read_files(filenames):
 
 
 def remove_part_images(filename):
-    """Remove PART(#)_files directory containing images from disk"""
+    """Remove PART(#)_files directory containing images from disk."""
     dirname = '{0}_files'.format(os.path.splitext(filename)[0])
     if os.path.exists(dirname):
         shutil.rmtree(dirname)
 
 
 def remove_part_files(num_parts=None):
-    """Remove PART(#).html files and image directories from disk"""
+    """Remove PART(#).html files and image directories from disk."""
     filenames = get_part_filenames(num_parts)
     for filename in filenames:
         remove_part_images(filename)
@@ -766,7 +756,7 @@ def remove_part_files(num_parts=None):
 
 
 def confirm_input(user_input):
-    """Check user input for yes, no, or an exit signal"""
+    """Check user input for yes, no, or an exit signal."""
     if isinstance(user_input, list):
         user_input = ''.join(user_input)
 
@@ -787,7 +777,7 @@ def confirm_input(user_input):
 
 
 def mkdir_and_cd(dirname):
-    """Change directory and/or create it if necessary"""
+    """Change directory and/or create it if necessary."""
     if not os.path.exists(dirname):
         os.makedirs(dirname)
         os.chdir(dirname)

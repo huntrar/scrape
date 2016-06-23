@@ -1,3 +1,11 @@
+0.9.3
+------
+
+ - Moved crawling functions into a Crawler class
+ - General refactorings to docstrings, function names, etc.
+ - Consolidated max_pages and max_links arguments as max_crawls
+ - Added tldextract module for getting URL domain, suffixes
+
 0.9.2
 ------
 

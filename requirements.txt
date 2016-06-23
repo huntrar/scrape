@@ -3,3 +3,4 @@ lxml==3.4.4
 pdfkit==0.5.0
 requests==2.9.1
 requests-cache==0.4.10
+tldextract==2.0.1
