@@ -1,3 +1,8 @@
+0.9.4
+------
+
+ - Retired support for 3.2 as tldextract doesn't support it
+
 0.9.3
 ------
 
