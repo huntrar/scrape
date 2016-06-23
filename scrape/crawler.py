@@ -1,4 +1,4 @@
-"""Link crawling functions"""
+"""A class to crawl webpages."""
 
 from __future__ import absolute_import, print_function
 import sys
@@ -21,6 +21,9 @@ class Crawler(object):
         """Get new links from a URL and filter them."""
         links_on_page = resp.xpath('//a/@href')
         links = [utils.clean_url(u, url) for u in links_on_page]
+
+        # Remove non-links through filtering by protocol
+        links = [x for x in links if utils.check_protocol(x)]
 
         # Restrict new URLs by the domain of the input URL
         if not self.args['nonstrict']:

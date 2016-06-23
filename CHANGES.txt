@@ -1,3 +1,9 @@
+0.9.6
+------
+
+ - Bugfix: Remove non-links through filtering by protocol
+ - Refactorings
+
 0.9.5
 ------
 
