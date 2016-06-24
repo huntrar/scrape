@@ -5,8 +5,8 @@ import sys
 
 import lxml.html as lh
 
-from scrape.orderedset import OrderedSet
-from scrape import utils
+from .orderedset import OrderedSet
+from . import utils
 
 
 class Crawler(object):

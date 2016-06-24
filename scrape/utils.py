@@ -29,18 +29,11 @@ try:
 except ImportError:
     pass
 import requests
+from six import PY2
+from six.moves import input, xrange as range
+from six.moves.urllib.parse import urlparse, urljoin
+from six.moves.urllib.request import getproxies
 import tldextract
-
-from .compat import uni, asc
-from . import SYS_VERSION
-
-
-if SYS_VERSION == 2:
-    from urllib import getproxies
-    from urlparse import urlparse, urljoin
-else:
-    from urllib.request import getproxies
-    from urllib.parse import urlparse, urljoin
 
 
 USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
@@ -60,8 +53,7 @@ USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) '
 XDG_CACHE_DIR = os.environ.get('XDG_CACHE_HOME',
                                os.path.join(os.path.expanduser('~'), '.cache'))
 CACHE_DIR = os.path.join(XDG_CACHE_DIR, 'scrape')
-CACHE_FILE = os.path.join(CACHE_DIR, 'cache{0}'.format(
-    SYS_VERSION if SYS_VERSION == 3 else ''))
+CACHE_FILE = os.path.join(CACHE_DIR, 'cache{0}'.format('' if PY2 else '3'))
 
 # Web requests and requests caching functions
 #
@@ -85,7 +77,7 @@ def get_resp(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
-        return lh.fromstring(uni(request.text))
+        return lh.fromstring(request.text.encode('utf-8') if PY2 else request.text)
     except Exception:
         sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
         raise
@@ -96,7 +88,7 @@ def get_raw_resp(url):
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
         request = requests.get(url, headers=headers, proxies=get_proxies())
-        return uni(request.text)
+        return request.text.encode('utf-8') if PY2 else request.text
     except Exception:
         sys.stderr.write('Failed to retrieve {0} as str.\n'.format(url))
         raise
@@ -183,20 +175,21 @@ def remove_whitespace(text):
         else:
             # Filter the rest of the lines
             curr_line = text.pop(0)
-            if text:
-                if curr_line.strip():
-                    clean_text.append(curr_line)
-                else:
-                    # If the current line is whitespace then make sure there is
-                    # no more than one consecutive line of whitespace following
-                    if not text[0].strip():
-                        if len(text) > 1 and text[1].strip():
-                            clean_text.append(curr_line)
-                    else:
-                        clean_text.append(curr_line)
-            else:
+            if not text:
                 # Add the final line if it is not whitespace
                 if curr_line.strip():
+                    clean_text.append(curr_line)
+                continue
+
+            if curr_line.strip():
+                clean_text.append(curr_line)
+            else:
+                # If the current line is whitespace then make sure there is
+                # no more than one consecutive line of whitespace following
+                if not text[0].strip():
+                    if len(text) > 1 and text[1].strip():
+                        clean_text.append(curr_line)
+                else:
                     clean_text.append(curr_line)
 
     # Now filter each individual line for extraneous whitespace
@@ -324,7 +317,9 @@ def get_domain(url):
 
 def add_protocol(url):
     """Add protocol to URL."""
-    return 'http://{0}'.format(url)
+    if not check_protocol(url):
+        return 'http://{0}'.format(url)
+    return url
 
 
 def check_protocol(url):
@@ -701,9 +696,9 @@ def write_part_file(args, url, raw_html, html=None, part_num=None):
         part_num = get_num_part_files() + 1
     filename = 'PART{0}.html'.format(part_num)
 
-    # Decode bytes to str if necessary for Python 3
-    if type(raw_html) == bytes:
-        raw_html = asc(raw_html)
+    if isinstance(raw_html, bytes) and PY2:
+        raw_html = raw_html.encode('ascii', 'ignore')
+
     # Convert html to an lh.HtmlElement object for parsing/saving images
     if html is None:
         html = lh.fromstring(raw_html)

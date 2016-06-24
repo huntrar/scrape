@@ -48,6 +48,7 @@ setup(
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Topic :: Utility",
         "Topic :: Text Processing",
     ],
     keywords='web crawler scraper scrape crawl download filter save webpages websites images docs document documentation pdf csv html lxml',
@@ -67,6 +68,7 @@ setup(
         'lxml',
         'pdfkit',
         'requests',
+        'six',
         'tldextract',
     ]
 )

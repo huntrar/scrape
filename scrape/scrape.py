@@ -9,16 +9,17 @@ from argparse import ArgumentParser
 import os
 import sys
 
-from scrape import utils
-from scrape.crawler import Crawler
-from scrape import __version__
+from six.moves import input
+
+from .crawler import Crawler
+from . import utils, __version__
 
 
 def get_parser():
     """Parse command-line arguments."""
     parser = ArgumentParser(description='a command-line web scraping tool')
     parser.add_argument('query', metavar='QUERY', type=str, nargs='*',
-                        help='URL\'s/files to scrape')
+                        help='URLs/files to scrape')
     parser.add_argument('-a', '--attributes', type=str, nargs='*',
                         help='extract text using tag attributes')
     parser.add_argument('-all', '--crawl-all', help='crawl all pages',
@@ -244,13 +245,13 @@ def scrape(args):
 
         # Detect whether to save to a single or multiple files
         if not args['single'] and not args['multiple']:
-            # Save to multiple files if multiple files/URL's entered
+            # Save to multiple files if multiple files/URLs entered
             if len(args['query']) > 1 or len(args['out']) > 1:
                 args['multiple'] = True
             else:
                 args['single'] = True
 
-        # Split query input into local files and URL's
+        # Split query input into local files and URLs
         args['files'] = []
         args['urls'] = []
         for arg in args['query']:
@@ -260,10 +261,9 @@ def scrape(args):
                 args['urls'].append(arg.strip('/'))
 
         if args['urls']:
-            # Add URL extensions and schemes and update query and URL's
+            # Add URL extensions and schemes and update query and URLs
             urls_with_exts = [utils.add_url_suffix(x) for x in args['urls']]
-            args['query'] = [utils.add_protocol(x) if x in args['urls']
-                             and not utils.check_protocol(x) else x
+            args['query'] = [utils.add_protocol(x) if x in args['urls'] else x
                              for x in urls_with_exts]
             args['urls'] = [x for x in args['query'] if x not in args['files']]
 

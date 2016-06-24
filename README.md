@@ -30,7 +30,7 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
     a command-line web scraping tool
 
     positional arguments:
-      QUERY                 URL's/files to scrape
+      QUERY                 URLs/files to scrape
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -71,12 +71,12 @@ You must [install wkhtmltopdf](https://github.com/pdfkit/pdfkit/wiki/Installing-
 ## Notes
 * Supports both Python 2.x and Python 3.x.
 * Input to scrape can be links, files, or a combination of the two, allowing you to create new files constructed from both existing and newly scraped content.
-* Multiple input files/URL's are saved to multiple output files/directories by default. To consolidate them, use the --single flag.
+* Multiple input files/URLs are saved to multiple output files/directories by default. To consolidate them, use the --single flag.
 * Images are automatically included when saving as pdf or HTML; this involves making additional HTTP requests, adding a significant amount of processing time. If you wish to forgo this feature use the --no-images flag, or set the environment variable SCRAPE_DISABLE_IMGS.
 * Requests cache is enabled by default to cache webpages, it can be disabled by setting the environment variable SCRAPE_DISABLE_CACHE.
 * Pages are saved temporarily as PART.html files during processing. Unless saving pages as HTML, these files are removed automatically upon conversion or exit.
 * To crawl pages with no restrictions use the --crawl-all flag, or filter which pages to crawl by URL keywords by passing one or more regexps to --crawl.
-* If you want the crawler to follow links outside of the given URL's domain, use --nonstrict.
+* If you want the crawler to follow links outside of the given URLs domain, use --nonstrict.
 * Crawling can be stopped by Ctrl-C or alternatively by setting the number of pages or links to be crawled using --maxpages and --maxlinks. A page may contain zero or many links to more pages.
 * The text output of scraped files can be printed to stdout rather than saved by entering --print.
 * Filtering HTML can be done using --xpath, while filtering text is done by entering one or more regexps to --filter.
