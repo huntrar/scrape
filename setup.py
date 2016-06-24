@@ -6,7 +6,7 @@ import os
 
 def read(*names):
     values = dict()
-    extensions = ['.txt', '.md']
+    extensions = ['.txt', '.rst']
     for name in names:
         value = ''
         for extension in extensions:

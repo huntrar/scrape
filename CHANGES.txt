@@ -1,3 +1,8 @@
+0.9.9
+------
+
+ - Converted markdown README to rst
+
 0.9.8
 ------
 
