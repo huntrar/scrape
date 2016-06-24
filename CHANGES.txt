@@ -1,3 +1,8 @@
+0.9.8
+------
+
+ - Changed Utility classifier to Utilities
+
 0.9.7
 ------
 
