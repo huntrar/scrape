@@ -10,6 +10,7 @@ import os
 import sys
 
 from six.moves import input
+from six import iterkeys
 
 from .crawler import Crawler
 from . import utils, __version__
@@ -70,21 +71,6 @@ def get_parser():
     return parser
 
 
-def print_text(args, infilenames):
-    """Print text content of infiles to stdout.
-
-    Keyword arguments:
-    args -- program arguments (dict)
-    infilenames -- names of user-inputted and/or downloaded files (list)
-    """
-    for infilename in infilenames:
-        parsed_text = utils.get_parsed_text(args, infilename)
-        if parsed_text:
-            for line in parsed_text:
-                print(line)
-            print('')
-
-
 def write_files(args, infilenames, outfilename):
     """Write scraped or local file(s) in desired format.
 
@@ -95,75 +81,47 @@ def write_files(args, infilenames, outfilename):
 
     Remove PART(#).html files after conversion unless otherwise specified.
     """
+    write_actions = {'print': utils.print_text,
+                     'pdf': utils.write_pdf_files,
+                     'csv': utils.write_csv_files,
+                     'text': utils.write_text_files}
     try:
-        if args['print']:
-            print_text(args, infilenames)
-        elif args['pdf']:
-            if not outfilename.endswith('.pdf'):
-                outfilename = outfilename + '.pdf'
-            utils.write_pdf_files(args, infilenames, outfilename)
-        elif args['csv']:
-            # csv/text is parsed by XPath/regexes/tag attributes prior to writing
-            if not outfilename.endswith('.csv'):
-                outfilename = outfilename + '.csv'
-            utils.write_csv_files(args, infilenames, outfilename)
-        elif args['text']:
-            if not outfilename.endswith('.txt'):
-                outfilename = outfilename + '.txt'
-            utils.write_text_files(args, infilenames, outfilename)
-    except (KeyboardInterrupt, Exception):
+        for action in iterkeys(write_actions):
+            if args[action]:
+                write_actions[action](args, infilenames, outfilename)
+    finally:
         if args['urls'] and not args['html']:
             utils.remove_part_files()
-        raise
-
-    if args['urls'] and not args['html']:
-        utils.remove_part_files()
 
 
-def get_single_outfilename(args):
-    """Use first possible entry in query as filename."""
-    for arg in args['query']:
-        if arg in args['files']:
-            return ('.'.join(arg.split('.')[:-1])).lower()
-        for url in args['urls']:
-            if arg.strip('/') in url:
-                domain = utils.get_domain(url)
-                return utils.get_outfilename(url, domain)
-    sys.stderr.write('Failed to construct a single out filename.\n')
-    return ''
-
-
-def write_single_file(args, base_dir):
+def write_single_file(args, base_dir, crawler):
     """Write to a single output file and/or subdirectory."""
-    crawler = Crawler(args)
-
-    if args['urls']:
+    if args['urls'] and args['html']:
+        # Create a directory to save PART.html files in
         domain = utils.get_domain(args['urls'][0])
-        if args['html']:
-            # Create a single directory to store HTML files in
-            if not args['quiet']:
-                print('Storing html files in {0}/'.format(domain))
-            utils.mkdir_and_cd(domain)
+        if not args['quiet']:
+            print('Storing html files in {0}/'.format(domain))
+        utils.mkdir_and_cd(domain)
 
     infilenames = []
     for query in args['query']:
-        if query.strip('/') in args['urls']:
+        if query in args['files']:
+            infilenames.append(query)
+        elif query.strip('/') in args['urls']:
             if args['crawl'] or args['crawl_all']:
-                # Crawl and/or write HTML files and possibly images to disk
+                # Crawl and save HTML files/image files to disk
                 infilenames += crawler.crawl_links(query)
             else:
                 raw_resp = utils.get_raw_resp(query)
-                if raw_resp is not None:
-                    prev_part_num = utils.get_num_part_files()
-                    utils.write_part_file(args, query, raw_resp)
-                    curr_part_num = prev_part_num + 1
-                    infilenames += utils.get_part_filenames(curr_part_num,
-                                                            prev_part_num)
-                else:
+                if raw_resp is None:
                     return False
-        elif query in args['files']:
-            infilenames.append(query)
 
+                prev_part_num = utils.get_num_part_files()
+                utils.write_part_file(args, query, raw_resp)
+                curr_part_num = prev_part_num + 1
+                infilenames += utils.get_part_filenames(curr_part_num, prev_part_num)
+
+    # Convert output or leave as PART.html files
     if args['html']:
         # HTML files have been written already, so return to base directory
         os.chdir(base_dir)
@@ -173,7 +131,7 @@ def write_single_file(args, base_dir):
             if args['out']:
                 outfilename = args['out'][0]
             else:
-                outfilename = get_single_outfilename(args)
+                outfilename = utils.get_single_outfilename(args)
             if outfilename:
                 write_files(args, infilenames, outfilename)
         else:
@@ -181,10 +139,8 @@ def write_single_file(args, base_dir):
     return True
 
 
-def write_multiple_files(args, base_dir):
+def write_multiple_files(args, base_dir, crawler):
     """Write to multiple output files and/or subdirectories."""
-    crawler = Crawler(args)
-
     for i, query in enumerate(args['query']):
         if query in args['files']:
             # Write files
@@ -197,27 +153,26 @@ def write_multiple_files(args, base_dir):
             # Scrape/crawl urls
             domain = utils.get_domain(query)
             if args['html']:
-                # Save .html files in a subdir named after the domain
+                # Create a directory to save PART.html files in
                 if not args['quiet']:
                     print('Storing html files in {0}/'.format(domain))
                 utils.mkdir_and_cd(domain)
 
-            # Crawl and/or write HTML files and possibly images to disk
             if args['crawl'] or args['crawl_all']:
-                # Traverses and saves pages as PART.html files
+                # Crawl and save HTML files/image files to disk
                 infilenames = crawler.crawl_links(query)
             else:
                 raw_resp = utils.get_raw_resp(query)
-                if raw_resp is not None:
-                    # Saves page as PART.html file
-                    prev_part_num = utils.get_num_part_files()
-                    utils.write_part_file(args, query, raw_resp)
-                    curr_part_num = prev_part_num + 1
-                    infilenames = utils.get_part_filenames(curr_part_num,
-                                                           prev_part_num)
-                else:
+                if raw_resp is None:
                     return False
 
+                # Saves page as PART.html file
+                prev_part_num = utils.get_num_part_files()
+                utils.write_part_file(args, query, raw_resp)
+                curr_part_num = prev_part_num + 1
+                infilenames = utils.get_part_filenames(curr_part_num, prev_part_num)
+
+            # Convert output or leave as PART.html files
             if args['html']:
                 # HTML files have been written already, so return to base dir
                 os.chdir(base_dir)
@@ -235,30 +190,39 @@ def write_multiple_files(args, base_dir):
     return True
 
 
+def split_input(args):
+    """Split query input into local files and URLs."""
+    args['files'] = []
+    args['urls'] = []
+    for arg in args['query']:
+        if os.path.isfile(arg):
+            args['files'].append(arg)
+        else:
+            args['urls'].append(arg.strip('/'))
+
+
+def detect_output_type(args):
+    """Detect whether to save to a single or multiple files."""
+    if not args['single'] and not args['multiple']:
+        # Save to multiple files if multiple files/URLs entered
+        if len(args['query']) > 1 or len(args['out']) > 1:
+            args['multiple'] = True
+        else:
+            args['single'] = True
+
+
 def scrape(args):
-    """Extract, filter, and convert webpages to text, pdf, or HTML files."""
+    """Scrape webpage content."""
     try:
         base_dir = os.getcwd()
-
         if args['out'] is None:
             args['out'] = []
 
         # Detect whether to save to a single or multiple files
-        if not args['single'] and not args['multiple']:
-            # Save to multiple files if multiple files/URLs entered
-            if len(args['query']) > 1 or len(args['out']) > 1:
-                args['multiple'] = True
-            else:
-                args['single'] = True
+        detect_output_type(args)
 
         # Split query input into local files and URLs
-        args['files'] = []
-        args['urls'] = []
-        for arg in args['query']:
-            if os.path.isfile(arg):
-                args['files'].append(arg)
-            else:
-                args['urls'].append(arg.strip('/'))
+        split_input(args)
 
         if args['urls']:
             # Add URL extensions and schemes and update query and URLs
@@ -272,10 +236,16 @@ def scrape(args):
             sys.stderr.write('Cannot convert local files to HTML.\n')
             args['files'] = []
 
+        # Instantiate web crawler if necessary
+        crawler = None
+        if args['crawl'] or args['crawl_all']:
+            crawler = Crawler(args)
+
         if args['single']:
-            return write_single_file(args, base_dir)
+            return write_single_file(args, base_dir, crawler)
         elif args['multiple']:
-            return write_multiple_files(args, base_dir)
+            return write_multiple_files(args, base_dir, crawler)
+
     except (KeyboardInterrupt, Exception):
         if args['html']:
             try:
@@ -285,6 +255,38 @@ def scrape(args):
         else:
             utils.remove_part_files()
         raise
+
+
+def prompt_filetype(args):
+    """Prompt user for filetype if none specified."""
+    valid_types = ('print', 'text', 'csv', 'pdf', 'html')
+    if not any(args[x] for x in valid_types):
+        try:
+            filetype = input('Print or save output as ({0}): '
+                             .format(', '.join(valid_types))).lower()
+            while filetype not in valid_types:
+                filetype = input('Invalid entry. Choose from ({0}): '
+                                 .format(', '.join(valid_types))).lower()
+        except (KeyboardInterrupt, EOFError):
+            return
+        args[filetype] = True
+
+
+def prompt_save_images(args):
+    """Prompt user to save images when crawling (for pdf and HTML formats)."""
+    if args['images'] or args['no_images']:
+        return
+
+    if (args['pdf'] or args['html']) and (args['crawl'] or args['crawl_all']):
+        save_msg = ('Choosing to save images will greatly slow the'
+                    ' crawling process.\nSave images anyways? (y/n): ')
+        try:
+            save_images = utils.confirm_input(input(save_msg))
+        except (KeyboardInterrupt, EOFError):
+            return
+
+        args['images'] = save_images
+        args['no_images'] = not save_images
 
 
 def command_line_runner():
@@ -306,40 +308,17 @@ def command_line_runner():
     if not os.getenv('SCRAPE_DISABLE_CACHE'):
         utils.enable_cache()
 
-    # Prompt user for filetype if none specified
-    valid_types = ('print', 'text', 'csv', 'pdf', 'html')
-    if not any(args[x] for x in valid_types):
-        try:
-            filetype = input('Print or save output as ({0}): '
-                             .format(', '.join(valid_types))).lower()
-            while filetype not in valid_types:
-                filetype = input('Invalid entry. Choose from ({0}): '
-                                 .format(', '.join(valid_types))).lower()
-        except (KeyboardInterrupt, EOFError):
-            return
-        args[filetype] = True
-
     # Save images unless uset sets environ variable SCRAPE_DISABLE_IMGS
     if os.getenv('SCRAPE_DISABLE_IMGS'):
         args['no_images'] = True
 
-    # Ask user if they want to save images when crawling due to its overhead
-    # This is only applicable when saving to pdf or HTML formats
-    if (args['pdf'] or args['html']) and (args['crawl'] or args['crawl_all']):
-        if not args['images'] and not args['no_images']:
-            save_msg = ('Choosing to save images will greatly slow the'
-                        ' crawling process.\nSave images anyways? (y/n): ')
-            try:
-                save_images = utils.confirm_input(input(save_msg))
-            except (KeyboardInterrupt, EOFError):
-                return
-            if save_images:
-                args['images'] = True
-                args['no_images'] = False
-            else:
-                args['no_images'] = True
-                args['images'] = False
+    # Prompt user for filetype if none specified
+    prompt_filetype(args)
 
+    # Prompt user to save images when crawling (for pdf and HTML formats)
+    prompt_save_images(args)
+
+    # Scrape webpage content
     scrape(args)
 
 

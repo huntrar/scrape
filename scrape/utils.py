@@ -417,6 +417,19 @@ def get_outfilename(url, domain=None):
     return domain.lower()
 
 
+def get_single_outfilename(args):
+    """Use first possible entry in query as filename."""
+    for arg in args['query']:
+        if arg in args['files']:
+            return ('.'.join(arg.split('.')[:-1])).lower()
+        for url in args['urls']:
+            if arg.strip('/') in url:
+                domain = get_domain(url)
+                return get_outfilename(url, domain)
+    sys.stderr.write('Failed to construct a single out filename.\n')
+    return ''
+
+
 def remove_file(filename):
     """Remove a file from disk."""
     try:
@@ -428,18 +441,18 @@ def remove_file(filename):
 
 def modify_filename_id(filename):
     """Modify filename to have a unique numerical identifier."""
-    # Split the filename and its extension
     split_filename = os.path.splitext(filename)
     id_num_re = re.compile('(\(\d\))')
     id_num = re.findall(id_num_re, split_filename[-2])
     if id_num:
         new_id_num = int(id_num[-1].lstrip('(').rstrip(')')) + 1
+
         # Reconstruct filename with incremented id and its extension
         filename = ''.join((re.sub(id_num_re, '({0})'.format(new_id_num),
                                    split_filename[-2]), split_filename[-1]))
     else:
-        # Split the filename and its extension
         split_filename = os.path.splitext(filename)
+
         # Reconstruct filename with new id and its extension
         filename = ''.join(('{0} (2)'.format(split_filename[-2]),
                             split_filename[-1]))
@@ -466,6 +479,22 @@ def overwrite_file_check(args, filename):
     return filename
 
 
+def print_text(args, infilenames, outfilename=None):
+    """Print text content of infiles to stdout.
+
+    Keyword arguments:
+    args -- program arguments (dict)
+    infilenames -- names of user-inputted and/or downloaded files (list)
+    outfilename -- only used for interface purposes (None)
+    """
+    for infilename in infilenames:
+        parsed_text = get_parsed_text(args, infilename)
+        if parsed_text:
+            for line in parsed_text:
+                print(line)
+            print('')
+
+
 def write_pdf_files(args, infilenames, outfilename):
     """Write pdf file(s) to disk using pdfkit.
 
@@ -474,8 +503,10 @@ def write_pdf_files(args, infilenames, outfilename):
     infilenames -- names of user-inputted and/or downloaded files (list)
     outfilename -- name of output pdf file (str)
     """
-    # Modifies filename if user does not wish to overwrite
+    if not outfilename.endswith('.pdf'):
+        outfilename = outfilename + '.pdf'
     outfilename = overwrite_file_check(args, outfilename)
+
     options = {}
     try:
         if args['multiple']:
@@ -550,7 +581,8 @@ def write_csv_files(args, infilenames, outfilename):
             clean_line.append(word.strip(string.punctuation))
         return ', '.join(clean_line)
 
-    # Modifies filename if user does not wish to overwrite
+    if not outfilename.endswith('.csv'):
+        outfilename = outfilename + '.csv'
     outfilename = overwrite_file_check(args, outfilename)
 
     all_text = []  # Text must be aggregated if writing to a single output file
@@ -589,7 +621,8 @@ def write_text_files(args, infilenames, outfilename):
     infilenames -- names of user-inputted and/or downloaded files (list)
     outfilename -- name of output text file (str)
     """
-    # Modifies filename if user does not wish to overwrite
+    if not outfilename.endswith('.txt'):
+        outfilename = outfilename + '.txt'
     outfilename = overwrite_file_check(args, outfilename)
 
     all_text = []  # Text must be aggregated if writing to a single output file
