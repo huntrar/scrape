@@ -1,3 +1,9 @@
+0.9.11
+------
+
+ - Bugfix: MissingSchema during requests get
+ - Bugfix: Check for Python 2 should have been for Python 3
+
 0.9.10
 ------
 

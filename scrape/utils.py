@@ -29,6 +29,7 @@ try:
 except ImportError:
     pass
 import requests
+from requests.exceptions import MissingSchema
 from six import PY2
 from six.moves import input, xrange as range
 from six.moves.urllib.parse import urlparse, urljoin
@@ -76,7 +77,11 @@ def get_resp(url):
     """Get webpage response as an lxml.html.HtmlElement object."""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        request = requests.get(url, headers=headers, proxies=get_proxies())
+        try:
+            request = requests.get(url, headers=headers, proxies=get_proxies())
+        except MissingSchema:
+            url = add_protocol(url)
+            request = requests.get(url, headers=headers, proxies=get_proxies())
         return lh.fromstring(request.text.encode('utf-8') if PY2 else request.text)
     except Exception:
         sys.stderr.write('Failed to retrieve {0}.\n'.format(url))
@@ -87,7 +92,11 @@ def get_raw_resp(url):
     """Get webpage response as a unicode string."""
     try:
         headers = {'User-Agent': random.choice(USER_AGENTS)}
-        request = requests.get(url, headers=headers, proxies=get_proxies())
+        try:
+            request = requests.get(url, headers=headers, proxies=get_proxies())
+        except MissingSchema:
+            url = add_protocol(url)
+            request = requests.get(url, headers=headers, proxies=get_proxies())
         return request.text.encode('utf-8') if PY2 else request.text
     except Exception:
         sys.stderr.write('Failed to retrieve {0} as str.\n'.format(url))
@@ -729,7 +738,8 @@ def write_part_file(args, url, raw_html, html=None, part_num=None):
         part_num = get_num_part_files() + 1
     filename = 'PART{0}.html'.format(part_num)
 
-    if isinstance(raw_html, bytes) and PY2:
+    # Decode bytes to string in Python 3 versions
+    if not PY2 and isinstance(raw_html, bytes):
         raw_html = raw_html.encode('ascii', 'ignore')
 
     # Convert html to an lh.HtmlElement object for parsing/saving images

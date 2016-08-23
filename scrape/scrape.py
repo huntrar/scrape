@@ -308,7 +308,7 @@ def command_line_runner():
     if not os.getenv('SCRAPE_DISABLE_CACHE'):
         utils.enable_cache()
 
-    # Save images unless uset sets environ variable SCRAPE_DISABLE_IMGS
+    # Save images unless user sets environ variable SCRAPE_DISABLE_IMGS
     if os.getenv('SCRAPE_DISABLE_IMGS'):
         args['no_images'] = True
 
