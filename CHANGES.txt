@@ -1,3 +1,8 @@
+0.9.15
+------
+
+ - travis CI does not support 3.7 yet, removing that version from build
+
 0.9.14
 ------
 
