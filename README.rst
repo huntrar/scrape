@@ -1,5 +1,5 @@
-scrape |PyPI Version| |Build Status| |PyPI Monthly downloads|
-=============================================================
+scrape |PyPI Version| |Build Status| |Total Downloads|
+======================================================
 
 a command-line web scraping tool
 --------------------------------
@@ -132,5 +132,5 @@ Notes
    :target: https://pypi.python.org/pypi/scrape
 .. |Build Status| image:: https://travis-ci.org/huntrar/scrape.svg?branch=master
    :target: https://travis-ci.org/huntrar/scrape
-.. |PyPI Monthly downloads| image:: https://img.shields.io/pypi/dm/scrape.svg?style=flat
-   :target: https://pypi.python.org/pypi/scrape
+.. |Total Downloads| image:: https://pepy.tech/badge/scrape
+   :target: https://pepy.tech/project/scrape
