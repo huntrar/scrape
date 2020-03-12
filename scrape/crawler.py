@@ -11,6 +11,7 @@ from . import utils
 
 class Crawler(object):
     """Follows and saves webpages to PART.html files."""
+
     def __init__(self, args, seed_url=None):
         """Set seed URL and program arguments"""
         self.seed_url = seed_url
@@ -19,25 +20,25 @@ class Crawler(object):
 
     def get_new_links(self, url, resp):
         """Get new links from a URL and filter them."""
-        links_on_page = resp.xpath('//a/@href')
+        links_on_page = resp.xpath("//a/@href")
         links = [utils.clean_url(u, url) for u in links_on_page]
 
         # Remove non-links through filtering by protocol
         links = [x for x in links if utils.check_protocol(x)]
 
         # Restrict new URLs by the domain of the input URL
-        if not self.args['nonstrict']:
+        if not self.args["nonstrict"]:
             domain = utils.get_domain(url)
             links = [x for x in links if utils.get_domain(x) == domain]
 
         # Filter URLs by regex keywords, if any
-        if self.args['crawl']:
-            links = utils.re_filter(links, self.args['crawl'])
+        if self.args["crawl"]:
+            links = utils.re_filter(links, self.args["crawl"])
         return links
 
     def limit_reached(self, num_crawls):
         """Check if number of pages crawled have reached a limit."""
-        return self.args['max_crawls'] and num_crawls >= self.args['max_crawls']
+        return self.args["max_crawls"] and num_crawls >= self.args["max_crawls"]
 
     def page_crawled(self, page_resp):
         """Check if page has been crawled by hashing its text content.
@@ -46,9 +47,9 @@ class Crawler(object):
         Return whether page was found in cache.
         """
         page_text = utils.parse_text(page_resp)
-        page_hash = utils.hash_text(''.join(page_text))
+        page_hash = utils.hash_text("".join(page_text))
         if page_hash not in self.page_cache:
-            utils.cache_page(self.page_cache, page_hash, self.args['cache_size'])
+            utils.cache_page(self.page_cache, page_hash, self.args["cache_size"])
             return False
         return True
 
@@ -62,7 +63,7 @@ class Crawler(object):
             self.seed_url = seed_url
 
         if self.seed_url is None:
-            sys.stderr.write('Crawling requires a seed URL.\n')
+            sys.stderr.write("Crawling requires a seed URL.\n")
             return []
 
         prev_part_num = utils.get_num_part_files()
@@ -82,8 +83,8 @@ class Crawler(object):
                 if unique_url not in crawled_links:
                     raw_resp = utils.get_raw_resp(url)
                     if raw_resp is None:
-                        if not self.args['quiet']:
-                            sys.stderr.write('Failed to parse {0}.\n'.format(url))
+                        if not self.args["quiet"]:
+                            sys.stderr.write("Failed to parse {0}.\n".format(url))
                         continue
 
                     resp = lh.fromstring(raw_resp)
@@ -93,11 +94,13 @@ class Crawler(object):
                     crawled_links.add(unique_url)
                     new_links = self.get_new_links(url, resp)
                     uncrawled_links.update(new_links)
-                    if not self.args['quiet']:
-                        print('Crawled {0} (#{1}).'.format(url, len(crawled_links)))
+                    if not self.args["quiet"]:
+                        print("Crawled {0} (#{1}).".format(url, len(crawled_links)))
 
                     # Write page response to PART.html file
-                    utils.write_part_file(self.args, url, raw_resp, resp, len(crawled_links))
+                    utils.write_part_file(
+                        self.args, url, raw_resp, resp, len(crawled_links)
+                    )
         except (KeyboardInterrupt, EOFError):
             pass
 
