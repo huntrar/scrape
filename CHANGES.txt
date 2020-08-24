@@ -1,3 +1,8 @@
+0.10.1
+------
+
+ - Bugfix: TypeError when attempting to hash unencoded Unicode-objects
+
 0.10.0
 ------
 
