@@ -19,23 +19,16 @@ def read(*names):
     return values
 
 
-long_description = """
-%(README)s
+with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
 
-News
-====
-
-%(CHANGES)s
-
-""" % read(
-    "README", "CHANGES"
-)
 
 setup(
     name="scrape",
     version=scrape.__version__,
     description="a command-line web scraping tool",
     long_description=long_description,
+    long_description_content_type='text/x-rst',
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -48,7 +41,6 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

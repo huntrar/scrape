@@ -1,3 +1,9 @@
+0.10.2
+------
+
+ - Bump lxml from 4.3.0 to 4.6.2 for security patch
+ - Remove support for Python 3.4 as not supported in latest lxml version
+
 0.10.1
 ------
 
