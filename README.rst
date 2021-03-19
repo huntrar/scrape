@@ -1,4 +1,4 @@
-scrape |PyPI Version| |Build Status| |Total Downloads|
+scrape |PyPI Version| |Total Downloads|
 ======================================================
 
 a command-line web scraping tool
@@ -93,7 +93,6 @@ Author
 Notes
 -----
 
--  Supports both Python 2.x and Python 3.x.
 -  Input to scrape can be links, files, or a combination of the two,
    allowing you to create new files constructed from both existing and
    newly scraped content.
@@ -130,7 +129,5 @@ Notes
 
 .. |PyPI Version| image:: https://img.shields.io/pypi/v/scrape.svg
    :target: https://pypi.python.org/pypi/scrape
-.. |Build Status| image:: https://travis-ci.org/huntrar/scrape.svg?branch=master
-   :target: https://travis-ci.org/huntrar/scrape
 .. |Total Downloads| image:: https://pepy.tech/badge/scrape
    :target: https://pepy.tech/project/scrape

@@ -19,7 +19,10 @@ def read(*names):
     return values
 
 
-with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.rst'), encoding='utf-8') as f:
+with open(
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), "README.rst"),
+    encoding="utf-8",
+) as f:
     long_description = f.read()
 
 
@@ -28,7 +31,7 @@ setup(
     version=scrape.__version__,
     description="a command-line web scraping tool",
     long_description=long_description,
-    long_description_content_type='text/x-rst',
+    long_description_content_type="text/x-rst",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -38,13 +41,12 @@ setup(
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Utilities",
         "Topic :: Text Processing",
     ],

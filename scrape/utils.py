@@ -533,7 +533,7 @@ def write_pdf_files(args, infilenames, outfilename):
         outfilename = outfilename + ".pdf"
     outfilename = overwrite_file_check(args, outfilename)
 
-    options = {}
+    options = {"enable-local-file-access": None}
     try:
         if args["multiple"]:
             # Multiple files are written one at a time, so infilenames will

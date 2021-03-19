@@ -1,3 +1,10 @@
+0.11.0
+------
+
+ - Retire support for Python 2
+ - Retire Travis CI build and enable Python 3.8 and 3.9 in GitHub Actions
+ - Enable local file access for wkhtmltopdf to fix failure in embedding images in PDFs
+
 0.10.2
 ------
 
