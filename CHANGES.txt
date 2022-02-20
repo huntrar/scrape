@@ -1,3 +1,8 @@
+0.11.3
+------
+
+ - Adjust to relocation of module for container abstract base classes
+
 0.11.2
 ------
 
