@@ -1,5 +1,5 @@
 argparse==1.4.0
-lxml==4.6.5
+lxml==4.9.1
 pdfkit==0.6.1
 requests==2.25.1
 requests-cache==0.4.13
